@@ -1299,6 +1299,14 @@
     <string name="home_widgets_full">Na další widget není místo</string>
     <string name="home_widget_pick_title">Přidat widget na domovskou obrazovku</string>
     <string name="home_widgets_none">Toto zařízení nemá žádné widgety</string>
+    <string name="home_page_add">Přidat stránku</string>
+    <string name="home_page_remove">Odstranit tuto stránku</string>
+    <string name="home_page_position">Stránka %1$d z %2$d</string>
+    <string name="home_pages_title">Stránky domovské obrazovky</string>
+    <string name="home_page_add_detail">Nová stránka pro widgety. Přejdete na ni přejetím</string>
+    <string name="home_page_remove_detail">Widgety na ní se odstraní také</string>
+    <string name="home_widget_remove">Odstranit widget</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Nová domovská obrazovka</string>
     <string name="home_design_notice_message">Open Headunit má novou domovskou obrazovku: připojení, které používáte, je jedno velké tlačítko a zbytek je na straně řidiče.\n\nChcete ji používat? Kdykoli se můžete vrátit v Nastavení, Přizpůsobení.</string>
     <string name="home_design_notice_use_new">Použít nový vzhled</string>

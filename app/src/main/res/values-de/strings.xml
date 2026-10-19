@@ -1303,6 +1303,14 @@
     <string name="home_widgets_full">Kein Platz für ein weiteres Widget</string>
     <string name="home_widget_pick_title">Ein Widget zum Startbildschirm hinzufügen</string>
     <string name="home_widgets_none">Auf diesem Gerät gibt es keine Widgets</string>
+    <string name="home_page_add">Seite hinzufügen</string>
+    <string name="home_page_remove">Diese Seite entfernen</string>
+    <string name="home_page_position">Seite %1$d von %2$d</string>
+    <string name="home_pages_title">Seiten des Startbildschirms</string>
+    <string name="home_page_add_detail">Eine neue Seite für Widgets. Wische, um sie zu erreichen</string>
+    <string name="home_page_remove_detail">Die Widgets darauf werden ebenfalls entfernt</string>
+    <string name="home_widget_remove">Widget entfernen</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Ein neuer Startbildschirm</string>
     <string name="home_design_notice_message">Open Headunit hat einen neuen Startbildschirm: Deine Verbindung ist ein großer Button, der Rest liegt auf der Fahrerseite.\n\nMöchtest du ihn verwenden? Du kannst jederzeit unter Einstellungen, Anpassung zurückwechseln.</string>
     <string name="home_design_notice_use_new">Neues Design verwenden</string>

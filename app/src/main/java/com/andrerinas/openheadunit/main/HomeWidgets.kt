@@ -48,7 +48,13 @@ object HomeWidgets {
     }
 
     private fun host(context: Context): AppWidgetHost = hostInstance ?: synchronized(this) {
-        hostInstance ?: AppWidgetHost(context.applicationContext, hostId(context)).also { hostInstance = it }
+        hostInstance ?: Host(context.applicationContext, hostId(context)).also { hostInstance = it }
+    }
+
+    /** Hands out views that answer a long press even where the widget fills its box with taps. */
+    private class Host(context: Context, hostId: Int) : AppWidgetHost(context, hostId) {
+        override fun onCreateView(context: Context, appWidgetId: Int, appWidget: AppWidgetProviderInfo?): AppWidgetHostView =
+            HomeWidgetHostView(context)
     }
 
     fun startListening(context: Context) {
@@ -150,6 +156,16 @@ object HomeWidgets {
         } catch (e: Exception) {
             AppLog.w("$TAG: the widget could not be told its size: ${e.message}")
         }
+    }
+
+    /** The name the widget's own app gives it, for the menu that a long press on it opens. */
+    fun label(context: Context, appWidgetId: Int): String? {
+        val info = try {
+            manager(context).getAppWidgetInfo(appWidgetId)
+        } catch (e: Exception) {
+            null
+        } ?: return null
+        return labelOf(info, context.packageManager)
     }
 
     /** One widget the user can add, with the labels the picker shows. */

@@ -1302,6 +1302,14 @@
     <string name="home_widgets_full">Không còn chỗ cho tiện ích khác</string>
     <string name="home_widget_pick_title">Thêm tiện ích vào màn hình chính</string>
     <string name="home_widgets_none">Thiết bị này không có tiện ích nào</string>
+    <string name="home_page_add">Thêm trang</string>
+    <string name="home_page_remove">Xoá trang này</string>
+    <string name="home_page_position">Trang %1$d/%2$d</string>
+    <string name="home_pages_title">Các trang của màn hình chính</string>
+    <string name="home_page_add_detail">Một trang mới cho tiện ích. Vuốt để đến trang đó</string>
+    <string name="home_page_remove_detail">Các tiện ích trên trang này cũng bị xoá</string>
+    <string name="home_widget_remove">Xoá tiện ích</string>
+    <string name="home_widget_fallback_title">Tiện ích</string>
     <string name="home_design_notice_title">Màn hình chính mới</string>
     <string name="home_design_notice_message">Open Headunit có màn hình chính mới: kết nối bạn dùng là một nút lớn, phần còn lại nằm ở phía người lái.\n\nBạn có muốn dùng không? Bạn có thể quay lại bất cứ lúc nào trong Cài đặt, Tùy chỉnh.</string>
     <string name="home_design_notice_use_new">Dùng thiết kế mới</string>

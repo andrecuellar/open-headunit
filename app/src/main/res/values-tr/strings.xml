@@ -1294,6 +1294,14 @@
     <string name="home_widgets_full">Başka widget için yer yok</string>
     <string name="home_widget_pick_title">Ana ekrana widget ekle</string>
     <string name="home_widgets_none">Bu birimde widget yok</string>
+    <string name="home_page_add">Sayfa ekle</string>
+    <string name="home_page_remove">Bu sayfayı kaldır</string>
+    <string name="home_page_position">Sayfa %1$d / %2$d</string>
+    <string name="home_pages_title">Ana ekran sayfaları</string>
+    <string name="home_page_add_detail">Widget\'lar için yeni bir sayfa. Ulaşmak için kaydırın</string>
+    <string name="home_page_remove_detail">Üzerindeki widget\'lar da kaldırılır</string>
+    <string name="home_widget_remove">Widget\'ı kaldır</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Yeni bir ana ekran</string>
     <string name="home_design_notice_message">Open Headunit\'in yeni bir ana ekranı var: kullandığınız bağlantı tek bir büyük düğme, geri kalanı ise sürücü tarafında.\n\nKullanmak ister misiniz? İstediğiniz zaman Ayarlar, Özelleştirme bölümünden geri dönebilirsiniz.</string>
     <string name="home_design_notice_use_new">Yeni tasarımı kullan</string>

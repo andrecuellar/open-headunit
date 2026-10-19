@@ -998,6 +998,9 @@ class MainActivity : BaseActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) {
+            viewModel.homePressed.value = SystemClock.uptimeMillis()
+        }
         handleLaunchIntent(intent)
     }
 

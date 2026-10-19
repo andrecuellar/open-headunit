@@ -1302,6 +1302,14 @@
     <string name="home_widgets_full">Non c\'è spazio per un altro widget</string>
     <string name="home_widget_pick_title">Aggiungi un widget alla schermata iniziale</string>
     <string name="home_widgets_none">Questa unità non ha widget</string>
+    <string name="home_page_add">Aggiungi una pagina</string>
+    <string name="home_page_remove">Rimuovi questa pagina</string>
+    <string name="home_page_position">Pagina %1$d di %2$d</string>
+    <string name="home_pages_title">Pagine della schermata iniziale</string>
+    <string name="home_page_add_detail">Una nuova pagina per i widget. Scorri per raggiungerla</string>
+    <string name="home_page_remove_detail">Vengono rimossi anche i widget che contiene</string>
+    <string name="home_widget_remove">Rimuovi widget</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Una nuova schermata Home</string>
     <string name="home_design_notice_message">Open Headunit ha una nuova schermata Home: la connessione che usi è un unico pulsante grande e il resto si trova sul lato del guidatore.\n\nVuoi usarla? Puoi tornare indietro in qualsiasi momento in Impostazioni, Personalizzazione.</string>
     <string name="home_design_notice_use_new">Usa il nuovo design</string>

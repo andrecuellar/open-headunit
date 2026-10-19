@@ -1299,6 +1299,14 @@
     <string name="home_widgets_full">Geen ruimte voor nog een widget</string>
     <string name="home_widget_pick_title">Een widget aan het startscherm toevoegen</string>
     <string name="home_widgets_none">Dit toestel heeft geen widgets</string>
+    <string name="home_page_add">Een pagina toevoegen</string>
+    <string name="home_page_remove">Deze pagina verwijderen</string>
+    <string name="home_page_position">Pagina %1$d van %2$d</string>
+    <string name="home_pages_title">Pagina\'s van het startscherm</string>
+    <string name="home_page_add_detail">Een nieuwe pagina voor widgets. Veeg om erheen te gaan</string>
+    <string name="home_page_remove_detail">De widgets erop worden ook verwijderd</string>
+    <string name="home_widget_remove">Widget verwijderen</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Een nieuw startscherm</string>
     <string name="home_design_notice_message">Open Headunit heeft een nieuw startscherm: de verbinding die je gebruikt is één grote knop, en de rest staat aan de kant van de bestuurder.\n\nWil je het gebruiken? Je kunt altijd terugschakelen via Instellingen, Aanpassing.</string>
     <string name="home_design_notice_use_new">Nieuw ontwerp gebruiken</string>

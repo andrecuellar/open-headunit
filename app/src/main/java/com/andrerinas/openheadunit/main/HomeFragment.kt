@@ -24,6 +24,7 @@ import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.hardware.usb.UsbDevice
 import android.net.ConnectivityManager
 import androidx.fragment.app.Fragment
@@ -123,6 +124,7 @@ class HomeFragment : Fragment() {
     private var hasAttemptedAutoConnect = false
     private var hasAttemptedSingleUsbAutoConnect = false
     private var activeDialog: androidx.appcompat.app.AlertDialog? = null
+    private var actionDialog: android.app.Dialog? = null
     private var driverCountdownTimer: CountDownTimer? = null
     private var homeInfoTicker: Job? = null
     private var gpsListener: LocationListener? = null
@@ -131,9 +133,20 @@ class HomeFragment : Fragment() {
     private var compactHome = false
     /** The launcher home on a very wide unit, where the favorites sit beside the card. */
     private var ultrawideHome = false
+    /** How many pages the home has now: one unless it is the launcher and has more to show. */
+    private var pageCount = 1
+    /**
+     * The widgets under the favorites had no room on this screen, so they are on a page of their
+     * own. Decided once per home view: the screen does not change size without a new one.
+     */
+    private var widgetRowOverflows = false
+    /** Whether a session was up the last time the home looked, to notice one starting or ending. */
+    private var lastSessionActive: Boolean? = null
 
     // The widget the system is asking the user to allow, and the answer coming back.
     private var pendingWidgetId = -1
+    // Where that widget goes: a widget page's index, or null for the row under the favorites.
+    private var pendingWidgetPage: Int? = null
 
     private val widgetBindLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -141,9 +154,11 @@ class HomeFragment : Fragment() {
         val ctx = context ?: return@registerForActivityResult
         val returned = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
         val id = if (returned >= 0) returned else pendingWidgetId
+        val page = pendingWidgetPage
         pendingWidgetId = -1
+        pendingWidgetPage = null
         if (result.resultCode == android.app.Activity.RESULT_OK && id >= 0) {
-            placeWidget(id)
+            placeWidget(id, page)
         } else {
             if (id >= 0) HomeWidgets.forget(ctx, id)
             AppLog.i("HomeFragment: the widget was not allowed, releasing its id")
@@ -172,6 +187,15 @@ class HomeFragment : Fragment() {
         primaryAction = container.findViewById(R.id.home_primary_action)
         primaryCancel = container.findViewById(R.id.home_primary_cancel)
         favoriteSlots = HomeUiHelper.favoriteSlotIds.mapNotNull { container.findViewById(it) }
+        pageCount = 1
+        widgetRowOverflows = false
+        container.findViewById<HomePager>(R.id.home_pager)?.let { pager ->
+            pager.pageGap = container.resources.getDimensionPixelSize(R.dimen.home_gap)
+            pager.onPageChanged = { renderDots() }
+        }
+        // A long press on the main button's empty space is where pages are added.
+        container.findViewById<View>(R.id.home_primary_card)
+            ?.setOnLongClickListener { showPageMenu(widgetPage = null) }
         setupListeners()
     }
 
@@ -182,7 +206,14 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                commManager.connectionState.collect { renderHome() }
+                commManager.connectionState.collect {
+                    // A session starting or ending is a fresh start for the home: back to the main
+                    // button, which is where "Back to Android Auto" and the connections are.
+                    val active = commManager.isConnected
+                    if (lastSessionActive != null && lastSessionActive != active) showFirstPage(animate = false)
+                    lastSessionActive = active
+                    renderHome()
+                }
             }
         }
 
@@ -193,6 +224,7 @@ class HomeFragment : Fragment() {
         }
 
         mainViewModel.usbDevices.observe(viewLifecycleOwner) { renderHome() }
+        mainViewModel.homePressed.observe(viewLifecycleOwner) { showFirstPage(animate = isResumed) }
 
         val appSettings = App.provide(requireContext()).settings
 
@@ -322,10 +354,11 @@ class HomeFragment : Fragment() {
         )
         this.decision = decision
         val palette = homePalette(ctx)
-        // On the compact home the card is gone, so the bar carries every chosen connection: the one
-        // the card would have offered included. Otherwise a unit with a single chosen mode has no
-        // way to start it.
-        val barConnections = if (compactHome && decision.primary in chosen && decision.primary !in decision.barConnections) {
+        // With more than one page the card is not always in view, so the bar carries every chosen
+        // connection, the one the card offers included. Otherwise, on a page without the card, a
+        // unit with a single chosen mode has no way to start it.
+        val carriesAll = HomePagesPolicy.barCarriesEveryConnection(pageCount)
+        val barConnections = if (carriesAll && decision.primary in chosen && decision.primary !in decision.barConnections) {
             decision.barConnections + decision.primary
         } else {
             decision.barConnections
@@ -501,17 +534,20 @@ class HomeFragment : Fragment() {
     /**
      * How the home arranges itself, in one place:
      *
-     * - A small or narrow screen used as the launcher has no room for the main button's card, so
-     *   the favorite apps and widgets take the column and the card is only what is left of it.
+     * - A small or narrow screen used as the launcher has no room for the main button and the
+     *   favorite apps together, so the main button keeps the first page and the favorite apps and
+     *   widgets get the next one.
      * - A very wide unit gets two columns: the card on the driver's side and the favorites and
      *   widgets beside it, so the width is used instead of left empty under a wide card.
      * - Everything else keeps the card on top and the favorites under it.
+     *
+     * Any widget page the driver added follows those. The pages are rebuilt here, so this runs
+     * before the widget row and the main button are filled in.
      */
     private fun applyHomeLayout(root: View, appSettings: Settings, isLauncherActive: Boolean) {
         val card = root.findViewById<View>(R.id.home_primary_card) ?: return
-        val content = root.findViewById<View>(R.id.home_primary_content) ?: return
         val area = root.findViewById<View>(R.id.home_favorites_area) ?: return
-        val column = area.parent as? LinearLayout ?: return
+        val main = root.findViewById<LinearLayout>(R.id.home_page_main) ?: return
         val config = resources.configuration
 
         val small = config.screenHeightDp < COMPACT_HEIGHT_DP || config.screenWidthDp < COMPACT_WIDTH_DP
@@ -522,25 +558,15 @@ class HomeFragment : Fragment() {
         compactHome = compact
         ultrawideHome = wide
 
-        content.visibility = if (compact) View.GONE else View.VISIBLE
-        val cardShown = !compact || appSettings.showHomeClock || appSettings.showHomeSpeed
-        card.visibility = if (cardShown) View.VISIBLE else View.GONE
-
         val orientation = if (wide) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
-        if (column.orientation != orientation) column.orientation = orientation
+        if (main.orientation != orientation) main.orientation = orientation
+
+        renderPages(root, appSettings, isLauncherActive, area, main)
 
         (card.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
             val width = if (wide) 0 else ViewGroup.LayoutParams.MATCH_PARENT
-            val height = when {
-                wide -> ViewGroup.LayoutParams.MATCH_PARENT
-                compact -> ViewGroup.LayoutParams.WRAP_CONTENT
-                else -> 0
-            }
-            val weight = when {
-                wide -> 1.6f
-                compact -> 0f
-                else -> 1f
-            }
+            val height = if (wide) ViewGroup.LayoutParams.MATCH_PARENT else 0
+            val weight = if (wide) 1.6f else 1f
             if (params.width != width || params.height != height || params.weight != weight) {
                 params.width = width
                 params.height = height
@@ -564,6 +590,262 @@ class HomeFragment : Fragment() {
                 area.layoutParams = params
             }
         }
+    }
+
+    /**
+     * Rebuilds every page after the main one. The favorite apps area moves to a page of its own on
+     * the compact home and back under the main button otherwise; widget pages are built fresh, the
+     * same way the widget row is, so a widget that was just added and one that was there look alike.
+     */
+    private fun renderPages(root: View, appSettings: Settings, isLauncherActive: Boolean, area: View, main: LinearLayout) {
+        val pager = root.findViewById<HomePager>(R.id.home_pager) ?: return
+        val stored = if (isLauncherActive) prunePages(root.context, appSettings.homeWidgetPages) else emptyList()
+        val pages = if (isLauncherActive) {
+            HomePagesPolicy.pages(compactHome, stored.size, widgetRowOnItsOwnPage(appSettings))
+        } else {
+            HomePagesPolicy.pages(compact = false, widgetPages = 0)
+        }
+
+        (area.parent as? ViewGroup)?.removeView(area)
+        while (pager.childCount > 1) pager.removeViewAt(pager.childCount - 1)
+
+        val palette = homePalette(root.context)
+        var favoritesPlaced = false
+        for (page in pages.drop(1)) {
+            when (page.kind) {
+                HomePagesPolicy.Kind.APPS -> {
+                    pager.addView(appsPage(root.context, area))
+                    favoritesPlaced = true
+                }
+                HomePagesPolicy.Kind.WIDGET_ROW ->
+                    pager.addView(widgetRowPage(root.context, appSettings.homeWidgets, palette))
+                HomePagesPolicy.Kind.WIDGETS ->
+                    pager.addView(widgetPage(root.context, stored[page.widgetPage], page.widgetPage, palette))
+                HomePagesPolicy.Kind.HOME -> Unit
+            }
+        }
+        if (!favoritesPlaced) {
+            main.addView(
+                area,
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            )
+        }
+        if (pages.size != pageCount) AppLog.i("HomeFragment: the home has ${pages.size} page(s), compact=$compactHome")
+        pageCount = pages.size
+        pager.showPage(pager.currentPage, animate = false)
+        renderDots()
+    }
+
+    private fun widgetRowOnItsOwnPage(appSettings: Settings): Boolean =
+        widgetRowOverflows && !ultrawideHome && appSettings.homeWidgets.isNotEmpty()
+
+    private fun appsPage(ctx: Context, area: View): View = LinearLayout(ctx).apply {
+        id = R.id.home_page_apps
+        orientation = LinearLayout.VERTICAL
+        setOnLongClickListener { showPageMenu(widgetPage = null) }
+        addView(area, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+    }
+
+    /**
+     * One page of widgets: a grid of equal cells, two across on a landscape screen and one on a
+     * portrait one, with an "Add a widget" cell while the page has room. Below Android 5.0 there
+     * are no widgets to add, so a page stored on a newer unit only offers to be removed.
+     */
+    private fun widgetPage(ctx: Context, ids: List<Int>, index: Int, palette: HomeUiHelper.Palette): View =
+        widgetGrid(ctx, ids, index, ids.size < HomePagesPolicy.MAX_WIDGETS_PER_PAGE, palette)
+
+    /** The row under the favorites, on its own page because this screen has no room for it there. */
+    private fun widgetRowPage(ctx: Context, ids: List<Int>, palette: HomeUiHelper.Palette): View =
+        widgetGrid(ctx, ids, pageIndex = null, roomForMore = ids.size < HomeWidgetsPolicy.MAX_WIDGETS, palette = palette)
+
+    /**
+     * @param pageIndex the added page this is, or null for the widget row's page; it decides where
+     *   a new widget goes and whether the page can be removed.
+     */
+    private fun widgetGrid(
+        ctx: Context,
+        ids: List<Int>,
+        pageIndex: Int?,
+        roomForMore: Boolean,
+        palette: HomeUiHelper.Palette
+    ): View {
+        val page = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            dividerDrawable = ContextCompat.getDrawable(ctx, R.drawable.home_gap)
+            showDividers = LinearLayout.SHOW_DIVIDER_MIDDLE
+            setOnLongClickListener { showPageMenu(widgetPage = pageIndex) }
+        }
+        val cells = ids.mapNotNull { pageWidgetCell(ctx, page, it, pageIndex, palette) }.toMutableList()
+        if (HomeWidgets.supported() && roomForMore) {
+            val add = LayoutInflater.from(ctx).inflate(R.layout.item_home_widget_add, page, false)
+            add.setOnClickListener { pickWidget(page = pageIndex) }
+            add.setOnLongClickListener { showPageMenu(widgetPage = pageIndex) }
+            HomeUiHelper.paintWidgetAddTile(ctx, add as ViewGroup, palette)
+            cells.add(add)
+        }
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        var next = 0
+        for (count in HomePagesPolicy.rows(cells.size, HomePagesPolicy.columns(landscape))) {
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                dividerDrawable = ContextCompat.getDrawable(ctx, R.drawable.home_gap)
+                showDividers = LinearLayout.SHOW_DIVIDER_MIDDLE
+            }
+            repeat(count) {
+                row.addView(cells[next++], LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+            }
+            page.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        }
+        return page
+    }
+
+    /** A widget filling its cell, told the cell's size once it has one so it can reflow into it. */
+    private fun pageWidgetCell(
+        ctx: Context,
+        parent: ViewGroup,
+        appWidgetId: Int,
+        pageIndex: Int?,
+        palette: HomeUiHelper.Palette
+    ): View? {
+        val hosted = HomeWidgets.view(ctx, appWidgetId) ?: return null
+        val frame = LayoutInflater.from(ctx).inflate(R.layout.item_home_widget, parent, false) as ViewGroup
+        frame.addView(hosted, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        HomeUiHelper.paintWidgetSlot(ctx, frame, palette)
+        frame.setOnLongClickListener { showWidgetMenu(appWidgetId, pageIndex) }
+        (hosted as? HomeWidgetHostView)?.onLongPress = { showWidgetMenu(appWidgetId, pageIndex) }
+        val padding = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_padding)
+        frame.doOnLayout { HomeWidgets.tellSize(hosted, it.width - padding * 2, it.height - padding * 2) }
+        return frame
+    }
+
+    /** Drops the widgets whose provider is gone from the widget pages, keeping the pages. */
+    private fun prunePages(ctx: Context, stored: List<List<Int>>): List<List<Int>> {
+        // Below Android 5.0 nothing can be looked up, and a page stored elsewhere is left alone.
+        if (!HomeWidgets.supported()) return stored
+        val gone = HomePagesPolicy.allWidgets(stored).filterNot { HomeWidgets.isAlive(ctx, it) }
+        if (gone.isEmpty()) return stored
+        gone.forEach { appWidgetId ->
+            AppLog.i("HomeFragment: widget $appWidgetId on a home page is no longer installed, dropping it")
+            HomeWidgets.forget(ctx, appWidgetId)
+        }
+        val pruned = gone.fold(stored) { pages, appWidgetId -> HomePagesPolicy.removeWidget(pages, appWidgetId) }
+        App.provide(ctx).settings.homeWidgetPages = pruned
+        return pruned
+    }
+
+    /** The dots under the pages: one per page, the current one longer, each one a way there. */
+    private fun renderDots() {
+        val root = view ?: return
+        val ctx = root.context
+        val dots = root.findViewById<LinearLayout>(R.id.home_page_dots) ?: return
+        val pager = root.findViewById<HomePager>(R.id.home_pager) ?: return
+        val count = pager.childCount
+        if (count <= 1) {
+            dots.removeAllViews()
+            dots.visibility = View.GONE
+            return
+        }
+        dots.visibility = View.VISIBLE
+        val palette = homePalette(ctx)
+        val res = ctx.resources
+        val dotSize = res.getDimensionPixelSize(R.dimen.home_dot_size)
+        val activeWidth = res.getDimensionPixelSize(R.dimen.home_dot_active_width)
+        val touchWidth = res.getDimensionPixelSize(R.dimen.home_dot_touch_width)
+        // Muted, but still there on the black of the extreme dark look.
+        val idle = (palette.textMuted and 0x00FFFFFF) or (DOT_IDLE_ALPHA shl 24)
+        dots.removeAllViews()
+        for (i in 0 until count) {
+            val current = i == pager.currentPage
+            val dot = View(ctx).apply {
+                background = GradientDrawable().apply {
+                    cornerRadius = dotSize / 2f
+                    setColor(if (current) palette.text else idle)
+                }
+            }
+            val button = FrameLayout(ctx).apply {
+                isClickable = true
+                isFocusable = true
+                contentDescription = getString(R.string.home_page_position, i + 1, count)
+                setOnClickListener { pager.showPage(i, animate = true) }
+                addView(dot, FrameLayout.LayoutParams(if (current) activeWidth else dotSize, dotSize, Gravity.CENTER))
+            }
+            dots.addView(button, LinearLayout.LayoutParams(touchWidth, ViewGroup.LayoutParams.MATCH_PARENT))
+        }
+    }
+
+    private fun showFirstPage(animate: Boolean) {
+        view?.findViewById<HomePager>(R.id.home_pager)?.showPage(0, animate)
+    }
+
+    /**
+     * The long press on an empty spot of a page: adding a page while there is room for one, and
+     * removing a widget page along with its widgets.
+     */
+    private fun showPageMenu(widgetPage: Int?): Boolean {
+        val ctx = context ?: return false
+        val appSettings = App.provide(ctx).settings
+        if (!appSettings.isCarLauncherActive) return false
+        val canAdd = HomeWidgets.supported() &&
+            HomePagesPolicy.canAddPage(compactHome, appSettings.homeWidgetPages.size, widgetRowOnItsOwnPage(appSettings))
+        val actions = mutableListOf<HomeActionDialog.Action>()
+        if (canAdd) {
+            actions.add(
+                HomeActionDialog.Action(
+                    getString(R.string.home_page_add), getString(R.string.home_page_add_detail),
+                    R.drawable.ic_home_page_add, destructive = false
+                ) { addWidgetPage() }
+            )
+        }
+        if (widgetPage != null) actions.add(removePageAction(widgetPage, otherWidgets = pageWidgetCount(widgetPage)))
+        if (actions.isEmpty()) return false
+        showActions(getString(R.string.home_pages_title), actions)
+        return true
+    }
+
+    private fun removePageAction(widgetPage: Int, otherWidgets: Int) = HomeActionDialog.Action(
+        getString(R.string.home_page_remove),
+        // Said only when it is true, so removing an empty page does not sound like it costs anything.
+        if (otherWidgets > 0) getString(R.string.home_page_remove_detail) else null,
+        R.drawable.ic_home_page_remove,
+        destructive = true
+    ) { removeWidgetPage(widgetPage) }
+
+    private fun pageWidgetCount(widgetPage: Int): Int =
+        App.provide(requireContext()).settings.homeWidgetPages.getOrNull(widgetPage)?.size ?: 0
+
+    /**
+     * The home's own menu rather than a popup: a popup hangs off the view that was pressed, and a
+     * page or a widget filling one reaches the bottom of the screen, where the popup only had room
+     * for its first row.
+     */
+    private fun showActions(title: String, actions: List<HomeActionDialog.Action>) {
+        val ctx = context ?: return
+        actionDialog?.dismiss()
+        actionDialog = HomeActionDialog.show(ctx, title, actions, homePalette(ctx))
+    }
+
+    private fun addWidgetPage() {
+        val appSettings = App.provide(requireContext()).settings
+        appSettings.homeWidgetPages = HomePagesPolicy.addPage(appSettings.homeWidgetPages)
+        AppLog.i("HomeFragment: added a home page")
+        refreshPages()
+        view?.findViewById<HomePager>(R.id.home_pager)?.let { it.showPage(it.childCount - 1, animate = true) }
+    }
+
+    private fun removeWidgetPage(index: Int) {
+        val ctx = requireContext()
+        val appSettings = App.provide(ctx).settings
+        val stored = appSettings.homeWidgetPages
+        stored.getOrNull(index)?.forEach { HomeWidgets.forget(ctx, it) }
+        appSettings.homeWidgetPages = HomePagesPolicy.removePage(stored, index)
+        AppLog.i("HomeFragment: removed added home page ${index + 1}")
+        refreshPages()
+    }
+
+    /** After a page or a widget on one changed: the pages, the widget row and the bar, in order. */
+    private fun refreshPages() {
+        updateLauncherViews()
+        renderHome()
     }
 
     private class FavoriteApp(val label: CharSequence, val icon: Drawable)
@@ -640,7 +922,8 @@ class HomeFragment : Fragment() {
         val row = root.findViewById<LinearLayout>(R.id.home_widgets_row) ?: return
         row.removeAllViews()
         val appSettings = App.provide(ctx).settings
-        if (!appSettings.isCarLauncherActive) {
+        // A widget can only be drawn in one place, and on this screen that place is its own page.
+        if (!appSettings.isCarLauncherActive || widgetRowOnItsOwnPage(appSettings)) {
             scroll.visibility = View.GONE
             return
         }
@@ -701,7 +984,8 @@ class HomeFragment : Fragment() {
         val width = minOf(HomeWidgets.minWidthPx(ctx, appWidgetId), ceiling)
             .coerceAtLeast(addTileWidth)
         frame.layoutParams = LinearLayout.LayoutParams(width, ViewGroup.LayoutParams.MATCH_PARENT)
-        frame.setOnLongClickListener { showWidgetMenu(appWidgetId, it) }
+        frame.setOnLongClickListener { showWidgetMenu(appWidgetId, pageIndex = null) }
+        (hosted as? HomeWidgetHostView)?.onLongPress = { showWidgetMenu(appWidgetId, pageIndex = null) }
         return frame
     }
 
@@ -726,10 +1010,10 @@ class HomeFragment : Fragment() {
         } else 0
         val columnHeight = column.height - column.paddingTop - column.paddingBottom - below
         val cardMin = cardMinimumHeight(card)
-        val content = card.findViewById<View>(R.id.home_primary_content)
-        val compact = content != null && content.visibility != View.VISIBLE
-        // Wide home: the card sits beside this column, so its height is not part of the room.
-        val room = if (ultrawideHome) {
+        val compact = compactHome
+        // Wide home: the card sits beside this column, and on the compact home it is on a page of
+        // its own, so in both its height is not part of the room.
+        val room = if (ultrawideHome || compact) {
             columnHeight - appsRow.height - gap
         } else {
             WidgetStripPolicy.roomFor(columnHeight, cardMin, appsRow.height, gap)
@@ -748,11 +1032,16 @@ class HomeFragment : Fragment() {
             )
         }
         if (height <= 0) {
-            AppLog.i(
-                "HomeFragment: no room for the widget row beside the main button " +
-                    "(room=${room}px, card needs ${cardMin}px), leaving it out"
-            )
             scroll.visibility = View.GONE
+            val hasWidgets = App.provide(ctx).settings.homeWidgets.isNotEmpty()
+            if (hasWidgets && !compact && !ultrawideHome && !widgetRowOverflows) {
+                AppLog.i(
+                    "HomeFragment: no room for the widget row beside the main button " +
+                        "(room=${room}px, card needs ${cardMin}px), moving it to its own page"
+                )
+                widgetRowOverflows = true
+                refreshPages()
+            }
             return
         }
         AppLog.i("HomeFragment: the widget row is ${height}px tall, out of ${room}px of room")
@@ -771,19 +1060,6 @@ class HomeFragment : Fragment() {
      */
     private fun cardMinimumHeight(card: View): Int {
         val content = card.findViewById<View>(R.id.home_primary_content) ?: return 0
-        if (content.visibility != View.VISIBLE) {
-            // Compact home: the card is only the strip that holds the date and the speed.
-            val info = card.findViewById<View>(R.id.home_info) ?: return 0
-            if (card.visibility != View.VISIBLE || info.visibility != View.VISIBLE) return 0
-            val width = card.width - 2 * card.resources.getDimensionPixelSize(R.dimen.home_card_padding_h)
-            if (width <= 0) return 0
-            info.measure(
-                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-            )
-            val params = info.layoutParams as? FrameLayout.LayoutParams
-            return info.measuredHeight + (params?.topMargin ?: 0)
-        }
         val width = if (content.width > 0) content.width else card.width
         if (width <= 0) return 0
         content.measure(
@@ -835,27 +1111,38 @@ class HomeFragment : Fragment() {
         return alive
     }
 
-    private fun showWidgetMenu(appWidgetId: Int, anchor: View): Boolean {
-        PopupMenu(requireContext(), anchor).apply {
-            menu.add(R.string.remove).setOnMenuItemClickListener {
-                removeWidget(appWidgetId)
-                true
-            }
-            show()
-        }
+    /** @param pageIndex the widget page the widget is on, or null for the row under the favorites. */
+    private fun showWidgetMenu(appWidgetId: Int, pageIndex: Int?): Boolean {
+        val ctx = requireContext()
+        val actions = mutableListOf(
+            HomeActionDialog.Action(
+                getString(R.string.home_widget_remove), null, R.drawable.ic_home_delete, destructive = true
+            ) { removeWidget(appWidgetId, pageIndex) }
+        )
+        if (pageIndex != null) actions.add(removePageAction(pageIndex, otherWidgets = pageWidgetCount(pageIndex) - 1))
+        showActions(HomeWidgets.label(ctx, appWidgetId) ?: getString(R.string.home_widget_fallback_title), actions)
         return true
     }
 
-    private fun removeWidget(appWidgetId: Int) {
+    private fun removeWidget(appWidgetId: Int, pageIndex: Int?) {
         val ctx = requireContext()
         val appSettings = App.provide(ctx).settings
-        appSettings.homeWidgets = HomeWidgetsPolicy.remove(appSettings.homeWidgets, appWidgetId)
         HomeWidgets.forget(ctx, appWidgetId)
-        renderWidgets()
+        if (pageIndex == null) {
+            appSettings.homeWidgets = HomeWidgetsPolicy.remove(appSettings.homeWidgets, appWidgetId)
+            if (widgetRowOverflows) refreshPages() else renderWidgets()
+        } else {
+            appSettings.homeWidgetPages = HomePagesPolicy.removeWidget(appSettings.homeWidgetPages, appWidgetId)
+            refreshPages()
+        }
     }
 
-    /** The list of widgets the unit has, named the way their own apps name them. */
-    private fun pickWidget() {
+    /**
+     * The list of widgets the unit has, named the way their own apps name them.
+     *
+     * @param page the widget page it goes on, or null for the row under the favorites.
+     */
+    private fun pickWidget(page: Int? = null) {
         val ctx = requireContext()
         val providers = HomeWidgets.providers(ctx)
         if (providers.isEmpty()) {
@@ -877,7 +1164,7 @@ class HomeFragment : Fragment() {
         }
         MaterialAlertDialogBuilder(ctx, R.style.DarkAlertDialog)
             .setTitle(R.string.home_widget_pick_title)
-            .setAdapter(adapter) { _, which -> addWidget(providers[which].info.provider) }
+            .setAdapter(adapter) { _, which -> addWidget(providers[which].info.provider, page) }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
@@ -886,20 +1173,32 @@ class HomeFragment : Fragment() {
      * Asks the system for the widget the user picked. From Android 5.0 the app may not bind one on
      * its own: when the system says no, it is the user who is asked, and the id waits for them.
      */
-    private fun addWidget(provider: ComponentName) {
+    private fun addWidget(provider: ComponentName, page: Int?) {
         val ctx = requireContext()
         val appWidgetId = HomeWidgets.allocateId(ctx)
         if (HomeWidgets.tryBind(ctx, appWidgetId, provider)) {
-            placeWidget(appWidgetId)
+            placeWidget(appWidgetId, page)
             return
         }
         pendingWidgetId = appWidgetId
+        pendingWidgetPage = page
         widgetBindLauncher.launch(HomeWidgets.bindRequest(appWidgetId, provider))
     }
 
-    private fun placeWidget(appWidgetId: Int) {
+    private fun placeWidget(appWidgetId: Int, page: Int?) {
         val ctx = requireContext()
         val appSettings = App.provide(ctx).settings
+        if (page != null) {
+            val pages = HomePagesPolicy.addWidget(appSettings.homeWidgetPages, page, appWidgetId)
+            if (pages == null) {
+                HomeWidgets.forget(ctx, appWidgetId)
+                ToastUtils.showToast(ctx, R.string.home_widgets_full, Toast.LENGTH_LONG, force = true)
+                return
+            }
+            appSettings.homeWidgetPages = pages
+            refreshPages()
+            return
+        }
         val updated = HomeWidgetsPolicy.add(appSettings.homeWidgets, appWidgetId)
         if (updated == null) {
             HomeWidgets.forget(ctx, appWidgetId)
@@ -907,7 +1206,7 @@ class HomeFragment : Fragment() {
             return
         }
         appSettings.homeWidgets = updated
-        renderWidgets()
+        if (widgetRowOverflows) refreshPages() else renderWidgets()
     }
 
     private fun onFavoriteClicked(slot: Int) {
@@ -1236,6 +1535,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun onWifiClicked() {
+        // With a session up the wireless tile is the way back to it, the same as the USB one. It
+        // used to do nothing, and on a page without the main button nothing else led back.
+        if (commManager.isConnected) {
+            openProjection()
+            return
+        }
         val mode = App.provide(requireContext()).settings.wifiConnectionMode
         when (mode) {
             WifiLauncherMode.AUTO -> { // Auto (Headunit Server) - One-Shot Scan
@@ -1436,6 +1741,8 @@ class HomeFragment : Fragment() {
         stopHomeInfo()
         activeDialog?.dismiss()
         activeDialog = null
+        actionDialog?.dismiss()
+        actionDialog = null
         RenameNotice.dismiss()
         Aa174Notice.dismiss()
         HomeDesignNotice.dismiss()
@@ -1975,6 +2282,8 @@ class HomeFragment : Fragment() {
         private const val COMPACT_WIDTH_DP = 400
         /** Where the unit is wide enough for the card and the favorites side by side. */
         private const val WIDE_WIDTH_DP = 1100
+        /** The idle page dots, about half as bright as the muted text. */
+        private const val DOT_IDLE_ALPHA = 0x80
         fun resetAutoStart() {
             hasAutoStarted = false
             hasCheckedNativeDriverSelection = false

@@ -115,17 +115,37 @@
 
     </LinearLayout>
 
+    <!-- The pages: the main one from this file, the rest added by HomeFragment.renderPages. The
+         dots under them only show with more than one page. -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:divider="@drawable/home_gap"
-        android:showDividers="middle">
+        android:orientation="vertical">
 
-        <include layout="@layout/view_home_primary_card" />
+        <com.andrerinas.openheadunit.main.HomePager
+            android:id="@+id/home_pager"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-        <include layout="@layout/view_home_favorites" />
+            <LinearLayout
+                android:id="@+id/home_page_main"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:divider="@drawable/home_gap"
+                android:showDividers="middle">
+
+                <include layout="@layout/view_home_primary_card" />
+
+                <include layout="@layout/view_home_favorites" />
+
+            </LinearLayout>
+
+        </com.andrerinas.openheadunit.main.HomePager>
+
+        <include layout="@layout/view_home_page_dots" />
 
     </LinearLayout>
 

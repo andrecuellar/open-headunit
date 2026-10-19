@@ -1385,6 +1385,14 @@
     <string name="home_widgets_full">No room for another widget</string>
     <string name="home_widget_pick_title">Add a widget to the home screen</string>
     <string name="home_widgets_none">This unit has no widgets to add</string>
+    <string name="home_page_add">Add a page</string>
+    <string name="home_page_remove">Remove this page</string>
+    <string name="home_page_position">Page %1$d of %2$d</string>
+    <string name="home_pages_title">Home screen pages</string>
+    <string name="home_page_add_detail">A new page for widgets. Swipe to reach it</string>
+    <string name="home_page_remove_detail">The widgets on it are removed too</string>
+    <string name="home_widget_remove">Remove widget</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">A new home screen</string>
     <string name="home_design_notice_message">Open Headunit has a new home screen: the connection you use is one big button, and the rest sits on the driver\'s side.\n\nDo you want to use it? You can switch back any time in Settings, Customization.</string>
     <string name="home_design_notice_use_new">Use the new design</string>

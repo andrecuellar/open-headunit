@@ -1307,6 +1307,14 @@
     <string name="home_widgets_full">No hay lugar para otro widget</string>
     <string name="home_widget_pick_title">Agregar un widget a la pantalla de inicio</string>
     <string name="home_widgets_none">Esta unidad no tiene widgets para agregar</string>
+    <string name="home_page_add">Agregar una página</string>
+    <string name="home_page_remove">Eliminar esta página</string>
+    <string name="home_page_position">Página %1$d de %2$d</string>
+    <string name="home_pages_title">Páginas de la pantalla de inicio</string>
+    <string name="home_page_add_detail">Una página nueva para widgets. Desliza para llegar a ella</string>
+    <string name="home_page_remove_detail">También se eliminan los widgets que tiene</string>
+    <string name="home_widget_remove">Eliminar widget</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Una nueva pantalla de inicio</string>
     <string name="home_design_notice_message">Open Headunit tiene una nueva pantalla de inicio: la conexión que usas es un solo botón grande y el resto queda del lado del conductor.\n\n¿Quieres usarla? Puedes volver cuando quieras en Configuración, Personalización.</string>
     <string name="home_design_notice_use_new">Usar el diseño nuevo</string>

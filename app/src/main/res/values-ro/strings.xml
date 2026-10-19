@@ -1296,6 +1296,14 @@
     <string name="home_widgets_full">Nu mai este loc pentru un widget</string>
     <string name="home_widget_pick_title">Adaugă un widget pe ecranul principal</string>
     <string name="home_widgets_none">Această unitate nu are widgeturi</string>
+    <string name="home_page_add">Adaugă o pagină</string>
+    <string name="home_page_remove">Elimină această pagină</string>
+    <string name="home_page_position">Pagina %1$d din %2$d</string>
+    <string name="home_pages_title">Paginile ecranului principal</string>
+    <string name="home_page_add_detail">O pagină nouă pentru widgeturi. Glisează ca să ajungi la ea</string>
+    <string name="home_page_remove_detail">Widgeturile de pe ea sunt eliminate și ele</string>
+    <string name="home_widget_remove">Elimină widgetul</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Un nou ecran principal</string>
     <string name="home_design_notice_message">Open Headunit are un nou ecran principal: conexiunea pe care o folosești este un singur buton mare, iar restul se află pe partea șoferului.\n\nVrei să îl folosești? Poți reveni oricând din Setări, Personalizare.</string>
     <string name="home_design_notice_use_new">Folosește noul design</string>

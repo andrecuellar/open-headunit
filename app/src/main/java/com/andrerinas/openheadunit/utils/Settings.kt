@@ -12,6 +12,7 @@ import android.os.Build
 import com.andrerinas.openheadunit.input.KeyCode
 import com.andrerinas.openheadunit.main.FavoriteAppsPolicy
 import com.andrerinas.openheadunit.main.FavoriteTarget
+import com.andrerinas.openheadunit.main.HomePagesPolicy
 import com.andrerinas.openheadunit.main.HomeWidgetsPolicy
 import com.andrerinas.openheadunit.input.MediaKeyRoutingPolicy
 import com.andrerinas.openheadunit.view.PerformanceOverlayField
@@ -1588,6 +1589,12 @@ class Settings(private val context: Context) {
     var homeWidgets: List<Int>
         get() = HomeWidgetsPolicy.decode(prefs.getString("home-widgets", "") ?: "")
         set(value) { prefs.edit().putString("home-widgets", HomeWidgetsPolicy.encode(value)).apply() }
+
+    /** The widget pages the driver added after the main one, each with its widgets in order.
+     *  See [HomePagesPolicy]. */
+    var homeWidgetPages: List<List<Int>>
+        get() = HomePagesPolicy.decode(prefs.getString("home-widget-pages", "") ?: "")
+        set(value) { prefs.edit().putString("home-widget-pages", HomePagesPolicy.encode(value)).apply() }
 
     /** The app widget host every bound widget names. 0 until the first widget is added. */
     var homeWidgetHostId: Int

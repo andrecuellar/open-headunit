@@ -1345,6 +1345,14 @@
     <string name="home_widgets_full">दूसरे विजेट के लिए जगह नहीं</string>
     <string name="home_widget_pick_title">होम स्क्रीन पर विजेट जोड़ें</string>
     <string name="home_widgets_none">इस यूनिट में कोई विजेट नहीं है</string>
+    <string name="home_page_add">पेज जोड़ें</string>
+    <string name="home_page_remove">यह पेज हटाएं</string>
+    <string name="home_page_position">पेज %1$d / %2$d</string>
+    <string name="home_pages_title">होम स्क्रीन पेज</string>
+    <string name="home_page_add_detail">विजेट के लिए नया पेज। वहाँ जाने के लिए स्वाइप करें</string>
+    <string name="home_page_remove_detail">इस पर मौजूद विजेट भी हट जाएंगे</string>
+    <string name="home_widget_remove">विजेट हटाएं</string>
+    <string name="home_widget_fallback_title">विजेट</string>
     <string name="home_design_notice_title">नई होम स्क्रीन</string>
     <string name="home_design_notice_message">Open Headunit में नई होम स्क्रीन है: आप जो कनेक्शन इस्तेमाल करते हैं वह एक बड़ा बटन है, और बाकी सब ड्राइवर की तरफ़ है।\n\nक्या आप इसे इस्तेमाल करना चाहते हैं? आप कभी भी सेटिंग्स, कस्टमाइज़ेशन में वापस बदल सकते हैं।</string>
     <string name="home_design_notice_use_new">नया डिज़ाइन इस्तेमाल करें</string>

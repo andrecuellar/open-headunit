@@ -1298,6 +1298,14 @@
     <string name="home_widgets_full">沒有空間再放一個小工具</string>
     <string name="home_widget_pick_title">在主畫面新增小工具</string>
     <string name="home_widgets_none">此裝置沒有可新增的小工具</string>
+    <string name="home_page_add">新增頁面</string>
+    <string name="home_page_remove">移除此頁面</string>
+    <string name="home_page_position">第 %1$d 頁，共 %2$d 頁</string>
+    <string name="home_pages_title">主畫面頁面</string>
+    <string name="home_page_add_detail">放置小工具的新頁面。滑動即可前往</string>
+    <string name="home_page_remove_detail">頁面上的小工具也會一併移除</string>
+    <string name="home_widget_remove">移除小工具</string>
+    <string name="home_widget_fallback_title">小工具</string>
     <string name="home_design_notice_title">全新的主畫面</string>
     <string name="home_design_notice_message">Open Headunit 推出了全新的主畫面：你使用的連線是一個大按鈕，其餘內容位於駕駛座一側。\n\n要使用新設計嗎？你隨時可以在「設定 > 個人化」中切換回來。</string>
     <string name="home_design_notice_use_new">使用新設計</string>

@@ -1295,6 +1295,14 @@
     <string name="home_widgets_full">Nincs hely egy újabb widgetnek</string>
     <string name="home_widget_pick_title">Widget hozzáadása a kezdőképernyőhöz</string>
     <string name="home_widgets_none">Ezen az egységen nincs widget</string>
+    <string name="home_page_add">Oldal hozzáadása</string>
+    <string name="home_page_remove">Az oldal eltávolítása</string>
+    <string name="home_page_position">%1$d. oldal / %2$d</string>
+    <string name="home_pages_title">A kezdőképernyő oldalai</string>
+    <string name="home_page_add_detail">Új oldal a widgeteknek. Húzással érhető el</string>
+    <string name="home_page_remove_detail">A rajta lévő widgetek is törlődnek</string>
+    <string name="home_widget_remove">Widget eltávolítása</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Új kezdőképernyő</string>
     <string name="home_design_notice_message">Az Open Headunit új kezdőképernyőt kapott: a használt kapcsolat egyetlen nagy gomb, a többi a vezető oldalán van.\n\nSzeretnéd használni? Bármikor visszaválthatsz a Beállítások, Testreszabás menüben.</string>
     <string name="home_design_notice_use_new">Az új kialakítás használata</string>

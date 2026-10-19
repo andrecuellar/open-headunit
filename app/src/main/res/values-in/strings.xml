@@ -1347,6 +1347,14 @@
     <string name="home_widgets_full">Tidak ada ruang untuk widget lain</string>
     <string name="home_widget_pick_title">Tambah widget ke layar utama</string>
     <string name="home_widgets_none">Unit ini tidak punya widget</string>
+    <string name="home_page_add">Tambah halaman</string>
+    <string name="home_page_remove">Hapus halaman ini</string>
+    <string name="home_page_position">Halaman %1$d dari %2$d</string>
+    <string name="home_pages_title">Halaman layar utama</string>
+    <string name="home_page_add_detail">Halaman baru untuk widget. Geser untuk membukanya</string>
+    <string name="home_page_remove_detail">Widget di halaman ini juga ikut dihapus</string>
+    <string name="home_widget_remove">Hapus widget</string>
+    <string name="home_widget_fallback_title">Widget</string>
     <string name="home_design_notice_title">Layar beranda baru</string>
     <string name="home_design_notice_message">Open Headunit punya layar beranda baru: koneksi yang Anda gunakan menjadi satu tombol besar, dan sisanya ada di sisi pengemudi.\n\nIngin menggunakannya? Anda bisa kembali kapan saja di Pengaturan, Kustomisasi.</string>
     <string name="home_design_notice_use_new">Gunakan desain baru</string>

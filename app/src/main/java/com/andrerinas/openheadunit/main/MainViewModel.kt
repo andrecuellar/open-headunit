@@ -17,6 +17,13 @@ class MainViewModel(application: Application): AndroidViewModel(application), Us
 
     val usbDevices = MutableLiveData<List<UsbDeviceCompat>>()
 
+    /**
+     * Set each time the Home button lands on this app as the launcher, so the home goes back to
+     * its first page the way any launcher does. Kept, not consumed: a home view created later
+     * starts on the first page anyway, so seeing an old value again changes nothing.
+     */
+    val homePressed = MutableLiveData<Long>()
+
     private val app: App
         get() = getApplication()
     private val settings = Settings(application)

@@ -1298,6 +1298,14 @@
     <string name="home_widgets_full">Brak miejsca na kolejny widget</string>
     <string name="home_widget_pick_title">Dodaj widget do ekranu głównego</string>
     <string name="home_widgets_none">To urządzenie nie ma widgetów</string>
+    <string name="home_page_add">Dodaj stronę</string>
+    <string name="home_page_remove">Usuń tę stronę</string>
+    <string name="home_page_position">Strona %1$d z %2$d</string>
+    <string name="home_pages_title">Strony ekranu głównego</string>
+    <string name="home_page_add_detail">Nowa strona na widżety. Przesuń, aby do niej przejść</string>
+    <string name="home_page_remove_detail">Widżety na niej też zostaną usunięte</string>
+    <string name="home_widget_remove">Usuń widżet</string>
+    <string name="home_widget_fallback_title">Widżet</string>
     <string name="home_design_notice_title">Nowy ekran główny</string>
     <string name="home_design_notice_message">Open Headunit ma nowy ekran główny: używane połączenie to jeden duży przycisk, a reszta znajduje się po stronie kierowcy.\n\nChcesz z niego korzystać? W każdej chwili możesz wrócić w Ustawienia, Personalizacja.</string>
     <string name="home_design_notice_use_new">Użyj nowego wyglądu</string>
