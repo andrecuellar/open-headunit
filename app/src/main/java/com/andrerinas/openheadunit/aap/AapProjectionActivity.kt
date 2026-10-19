@@ -1245,16 +1245,33 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
         maybeOpenCallRaiseEpisode()
     }
 
+    /**
+     * Releases the decoder once the projection has been covered for long enough. Posted from onStop
+     * and cancelled from onStart, so a camera that comes and goes leaves the decoder, and with it
+     * the picture, alone.
+     */
+    private val releaseDecoderAfterCoverRunnable = Runnable { releaseDecoderAfterCover() }
+
+    override fun onStart() {
+        super.onStart()
+        watchdogHandler.removeCallbacks(releaseDecoderAfterCoverRunnable)
+    }
+
     override fun onStop() {
         super.onStop()
         AppLog.i("AapProjectionActivity: onStop")
-        if (!App.isPiPActive && !isChangingConfigurations) {
-            val surface = ownedSurface
-            if (surface == null) {
-                AppLog.i("Decoder stop (activity_stopped) skipped: activity has no owned surface")
-            } else {
-                videoDecoder.stopIfCurrentSurface(surface, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
-            }
+        if (!DecoderCoverPolicy.shouldReleaseOnCover(App.isPiPActive, isChangingConfigurations)) return
+        watchdogHandler.removeCallbacks(releaseDecoderAfterCoverRunnable)
+        watchdogHandler.postDelayed(releaseDecoderAfterCoverRunnable, DecoderCoverPolicy.KEEP_DECODER_MS)
+    }
+
+    private fun releaseDecoderAfterCover() {
+        val surface = ownedSurface
+        if (surface == null) {
+            AppLog.i("Decoder stop (activity_stopped) skipped: activity has no owned surface")
+        } else {
+            AppLog.i("AapProjectionActivity: the projection stayed covered, releasing the decoder")
+            videoDecoder.stopIfCurrentSurface(surface, DecoderStopPolicy.REASON_ACTIVITY_STOPPED)
         }
     }
 
