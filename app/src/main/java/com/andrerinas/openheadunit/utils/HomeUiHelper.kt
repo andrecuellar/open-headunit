@@ -528,6 +528,12 @@ object HomeUiHelper {
         val texts = listOf(
             R.id.home_primary_kicker, R.id.home_primary_title, R.id.home_primary_subtitle
         ).mapNotNull { rootView.findViewById<TextView>(it) }
+        val content = rootView.findViewById<View>(R.id.home_primary_content)
+        if (content != null && content.visibility != View.VISIBLE) {
+            // Compact home: there is no title to protect, so the date and the speed keep the strip.
+            texts.forEach { it.maxWidth = Int.MAX_VALUE }
+            return
+        }
         if (!visible) {
             texts.forEach { it.maxWidth = Int.MAX_VALUE }
             return

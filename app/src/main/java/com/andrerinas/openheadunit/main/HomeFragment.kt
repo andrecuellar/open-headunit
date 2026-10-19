@@ -14,6 +14,7 @@ import android.content.res.ColorStateList
 import android.widget.*
 import android.view.View
 import android.view.ViewGroup
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewTreeObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -126,6 +127,8 @@ class HomeFragment : Fragment() {
     private var homeInfoTicker: Job? = null
     private var gpsListener: LocationListener? = null
     private var gpsSpeedKmh: Int? = null
+    /** The launcher home on a small screen, where the main button's card gives way to the rest. */
+    private var compactHome = false
 
     // The widget the system is asking the user to allow, and the answer coming back.
     private var pendingWidgetId = -1
@@ -477,7 +480,72 @@ class HomeFragment : Fragment() {
             AppDrawerFragment.preload(ctx)
             if (!isClassicHome && appSettings.showHomeFavoriteApps) loadFavorites()
         }
-        if (!isClassicHome) renderWidgets()
+        if (!isClassicHome) {
+            applyCompactHome(root, appSettings, isLauncherActive)
+            // The column's width is only known after a layout, and the cap changes that width.
+            root.post { if (isAdded && view === root) applyContentWidth(root) }
+            renderWidgets()
+        }
+    }
+
+    /**
+     * On a small or narrow screen used as the launcher, the main button's card is the part that
+     * makes everything look cramped: it is hidden and the favorite apps and widgets take the space
+     * instead. The connection buttons stay in the driver bar, which already starts each connection
+     * directly, and the date and the speed keep a thin strip at the top.
+     */
+    private fun applyCompactHome(root: View, appSettings: Settings, isLauncherActive: Boolean) {
+        val config = resources.configuration
+        val small = config.screenHeightDp < COMPACT_HEIGHT_DP || config.screenWidthDp < COMPACT_WIDTH_DP
+        val compact = isLauncherActive && small
+        compactHome = compact
+        val card = root.findViewById<View>(R.id.home_primary_card) ?: return
+        val content = root.findViewById<View>(R.id.home_primary_content) ?: return
+        val area = root.findViewById<View>(R.id.home_favorites_area) ?: return
+
+        content.visibility = if (compact) View.GONE else View.VISIBLE
+        val cardShown = !compact || appSettings.showHomeClock || appSettings.showHomeSpeed
+        card.visibility = if (cardShown) View.VISIBLE else View.GONE
+
+        val cardParams = card.layoutParams as? LinearLayout.LayoutParams ?: return
+        val cardHeight = if (compact) ViewGroup.LayoutParams.WRAP_CONTENT else 0
+        val cardWeight = if (compact) 0f else 1f
+        if (cardParams.height != cardHeight || cardParams.weight != cardWeight) {
+            cardParams.height = cardHeight
+            cardParams.weight = cardWeight
+            card.layoutParams = cardParams
+        }
+
+        val areaParams = area.layoutParams as? LinearLayout.LayoutParams ?: return
+        val areaHeight = if (compact) 0 else ViewGroup.LayoutParams.WRAP_CONTENT
+        val areaWeight = if (compact) 1f else 0f
+        if (areaParams.height != areaHeight || areaParams.weight != areaWeight) {
+            areaParams.height = areaHeight
+            areaParams.weight = areaWeight
+            area.layoutParams = areaParams
+        }
+    }
+
+    /**
+     * On an ultrawide unit the card did not need to run edge to edge: a panel that wide puts the
+     * text on one end and the time on the other. Above [R.dimen.home_content_max_width] the card
+     * and the favorite apps keep that width and sit centered in the column.
+     */
+    private fun applyContentWidth(root: View) {
+        if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) return
+        val column = root.findViewById<View>(R.id.home_primary_card)?.parent as? View ?: return
+        val available = column.width - column.paddingLeft - column.paddingRight
+        if (available <= 0) return
+        val cap = resources.getDimensionPixelSize(R.dimen.home_content_max_width)
+        val width = minOf(available, cap)
+        listOf(R.id.home_primary_card, R.id.home_favorites_area).forEach { id ->
+            val view = root.findViewById<View>(id) ?: return@forEach
+            val params = view.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
+            if (params.width == width && params.gravity == Gravity.CENTER_HORIZONTAL) return@forEach
+            params.width = width
+            params.gravity = Gravity.CENTER_HORIZONTAL
+            view.layoutParams = params
+        }
     }
 
     private class FavoriteApp(val label: CharSequence, val icon: Drawable)
@@ -603,9 +671,17 @@ class HomeFragment : Fragment() {
         )
         HomeUiHelper.paintWidgetSlot(ctx, frame, palette)
         // The width the widget asks for is the smallest it draws at. The row scrolls rather than
-        // squeezing it, and a narrow widget still gets a tile sized square.
-        val width = HomeWidgets.minWidthPx(ctx, appWidgetId)
-            .coerceAtLeast(ctx.resources.getDimensionPixelSize(R.dimen.home_favorites_height))
+        // squeezing it, and a narrow widget still gets a tile sized square. On the compact home the
+        // row is the whole width, so the widget gives up the little the "+" needs and reflows.
+        val gap = ctx.resources.getDimensionPixelSize(R.dimen.home_gap)
+        val addTileWidth = ctx.resources.getDimensionPixelSize(R.dimen.home_favorites_height)
+        val ceiling = if (compactHome) {
+            ctx.resources.displayMetrics.widthPixels - gap * 3 - addTileWidth
+        } else {
+            Int.MAX_VALUE
+        }
+        val width = minOf(HomeWidgets.minWidthPx(ctx, appWidgetId), ceiling)
+            .coerceAtLeast(addTileWidth)
         frame.layoutParams = LinearLayout.LayoutParams(width, ViewGroup.LayoutParams.MATCH_PARENT)
         frame.setOnLongClickListener { showWidgetMenu(appWidgetId, it) }
         return frame
@@ -633,13 +709,21 @@ class HomeFragment : Fragment() {
         val columnHeight = column.height - column.paddingTop - column.paddingBottom - below
         val cardMin = cardMinimumHeight(card)
         val room = WidgetStripPolicy.roomFor(columnHeight, cardMin, appsRow.height, gap)
-
-        val height = WidgetStripPolicy.height(
-            roomPx = room,
-            minPx = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_strip_min),
-            maxPx = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_strip_max),
-            tallestWidgetPx = preferredPx
-        )
+        val content = card.findViewById<View>(R.id.home_primary_content)
+        val compact = content != null && content.visibility != View.VISIBLE
+        val minPx = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_strip_min)
+        val height = if (compact) {
+            // No main button to protect here: the widgets take everything the favorite apps row
+            // leaves, so the compact home is not a small strip with a lot of empty screen under it.
+            (columnHeight - cardMin - gap * 2 - appsRow.height).coerceAtLeast(minPx)
+        } else {
+            WidgetStripPolicy.height(
+                roomPx = room,
+                minPx = minPx,
+                maxPx = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_strip_max),
+                tallestWidgetPx = preferredPx
+            )
+        }
         if (height <= 0) {
             AppLog.i(
                 "HomeFragment: no room for the widget row beside the main button " +
@@ -664,6 +748,19 @@ class HomeFragment : Fragment() {
      */
     private fun cardMinimumHeight(card: View): Int {
         val content = card.findViewById<View>(R.id.home_primary_content) ?: return 0
+        if (content.visibility != View.VISIBLE) {
+            // Compact home: the card is only the strip that holds the date and the speed.
+            val info = card.findViewById<View>(R.id.home_info) ?: return 0
+            if (card.visibility != View.VISIBLE || info.visibility != View.VISIBLE) return 0
+            val width = card.width - 2 * card.resources.getDimensionPixelSize(R.dimen.home_card_padding_h)
+            if (width <= 0) return 0
+            info.measure(
+                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val params = info.layoutParams as? FrameLayout.LayoutParams
+            return info.measuredHeight + (params?.topMargin ?: 0)
+        }
         val width = if (content.width > 0) content.width else card.width
         if (width <= 0) return 0
         content.measure(
@@ -677,11 +774,28 @@ class HomeFragment : Fragment() {
     private fun tellWidgetsTheirSize(root: View, height: Int) {
         val row = root.findViewById<ViewGroup>(R.id.home_widgets_row) ?: return
         val padding = root.resources.getDimensionPixelSize(R.dimen.home_widget_padding)
+        // A scroll view measures its child with AT_MOST, so a row that asks for match_parent does
+        // not get the viewport's height. Every box is told its size instead.
+        setViewHeight(row, height)
         for (i in 0 until row.childCount) {
             val frame = row.getChildAt(i) as? ViewGroup ?: continue
+            setViewHeight(frame, height)
             val hosted = frame.getChildAt(0) as? AppWidgetHostView ?: continue
             HomeWidgets.tellSize(hosted, (frame.layoutParams?.width ?: 0) - padding * 2, height - padding * 2)
         }
+        // The "+" keeps a tile shape: on the compact home the row is tall, and a stretched dashed
+        // rectangle with its label in the middle reads as a mistake.
+        row.findViewById<View>(R.id.widget_add_tile)?.let { add ->
+            if (add.width <= 0) return@let
+            setViewHeight(add, minOf(height, add.width * 3 / 2))
+        }
+    }
+
+    private fun setViewHeight(view: View, height: Int) {
+        val params = view.layoutParams ?: return
+        if (params.height == height) return
+        params.height = height
+        view.layoutParams = params
     }
 
     /** Drops the widgets whose provider is gone, so an uninstalled widget frees its place. */
@@ -1833,6 +1947,9 @@ class HomeFragment : Fragment() {
         private const val SPEED_INTERVAL_MS = 1_000L
         /** Older than this and the speed is shown as unknown: a stale reading is worse than none. */
         private const val SPEED_MAX_AGE_MS = 10_000L
+        /** Where the main button's card stops fitting and the favorites take over. */
+        private const val COMPACT_HEIGHT_DP = 360
+        private const val COMPACT_WIDTH_DP = 400
         fun resetAutoStart() {
             hasAutoStarted = false
             hasCheckedNativeDriverSelection = false

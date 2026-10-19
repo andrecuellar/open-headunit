@@ -131,6 +131,9 @@
         <item name="android:layout_marginTop">6dp</item>
         <item name="android:paddingLeft">4dp</item>
         <item name="android:paddingRight">4dp</item>
+        <!-- Centered, so a label that wraps ("Add app" on a narrow row) does not leave its
+             second line hanging against the left edge of the tile. -->
+        <item name="android:gravity">center</item>
         <!-- One line: the landscape bar shrinks its tiles to fit the height, and two lines would be
              cut by the shorter tile. See HomeTileLabel.Wrap for the portrait row. -->
         <item name="android:maxLines">1</item>

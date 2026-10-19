@@ -30,6 +30,7 @@
     <dimen name="home_info_speed">38sp</dimen>
     <dimen name="home_info_gap_wide">24dp</dimen>
     <dimen name="home_info_min_text">160dp</dimen>
+    <dimen name="home_content_max_width">1000dp</dimen>
     <dimen name="home_widget_padding">10dp</dimen>
     <dimen name="home_widget_strip_min">72dp</dimen>
     <dimen name="home_widget_strip_max">220dp</dimen>
