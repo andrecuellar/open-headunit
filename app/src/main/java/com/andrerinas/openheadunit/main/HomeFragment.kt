@@ -528,6 +528,31 @@ class HomeFragment : Fragment() {
         if (!isClassicHome) {
             applyHomeLayout(root, appSettings, isLauncherActive)
             renderWidgets()
+            // After the layout pass that sizes the card, not inside it: hiding a line asks for
+            // another one.
+            root.findViewById<View>(R.id.home_primary_card)?.doOnLayout { root.post { fitCardText(root) } }
+        }
+    }
+
+    /**
+     * The lines of the main button that step aside, the least needed first, when the card is too
+     * short for all of it: the subtitle ("Over WiFi"), then the kicker. Otherwise it is the button
+     * itself that gets cut, which is what happened on a 720x360dp screen once the page dots took
+     * their row.
+     */
+    private fun fitCardText(root: View) {
+        if (!isAdded || view !== root) return
+        val card = root.findViewById<View>(R.id.home_primary_card) ?: return
+        if (card.height <= 0) return
+        val optional = listOfNotNull(
+            root.findViewById<View>(R.id.home_primary_subtitle),
+            root.findViewById<View>(R.id.home_primary_kicker)
+        )
+        optional.forEach { it.visibility = View.VISIBLE }
+        val dropped = optional.takeWhile { cardMinimumHeight(card) > card.height }
+        dropped.forEach { it.visibility = View.GONE }
+        if (dropped.isNotEmpty()) {
+            AppLog.i("HomeFragment: the main button is ${card.height}px tall, hiding ${dropped.size} line(s) so its action fits")
         }
     }
 
