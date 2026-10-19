@@ -129,6 +129,8 @@ class HomeFragment : Fragment() {
     private var gpsSpeedKmh: Int? = null
     /** The launcher home on a small screen, where the main button's card gives way to the rest. */
     private var compactHome = false
+    /** The launcher home on a very wide unit, where the favorites sit beside the card. */
+    private var ultrawideHome = false
 
     // The widget the system is asking the user to allow, and the answer coming back.
     private var pendingWidgetId = -1
@@ -156,6 +158,7 @@ class HomeFragment : Fragment() {
 
     private fun inflateHomeContent(container: FrameLayout) {
         isClassicHome = App.provide(container.context).settings.useClassicHome
+        AppLog.i("HomeFragment: inflating the ${if (isClassicHome) "classic" else "new"} home")
         cachedPalette = null
         container.removeAllViews()
         LayoutInflater.from(container.context)
@@ -481,70 +484,76 @@ class HomeFragment : Fragment() {
             if (!isClassicHome && appSettings.showHomeFavoriteApps) loadFavorites()
         }
         if (!isClassicHome) {
-            applyCompactHome(root, appSettings, isLauncherActive)
-            // The column's width is only known after a layout, and the cap changes that width.
-            root.post { if (isAdded && view === root) applyContentWidth(root) }
+            applyHomeLayout(root, appSettings, isLauncherActive)
             renderWidgets()
         }
     }
 
     /**
-     * On a small or narrow screen used as the launcher, the main button's card is the part that
-     * makes everything look cramped: it is hidden and the favorite apps and widgets take the space
-     * instead. The connection buttons stay in the driver bar, which already starts each connection
-     * directly, and the date and the speed keep a thin strip at the top.
+     * How the home arranges itself, in one place:
+     *
+     * - A small or narrow screen used as the launcher has no room for the main button's card, so
+     *   the favorite apps and widgets take the column and the card is only what is left of it.
+     * - A very wide unit gets two columns: the card on the driver's side and the favorites and
+     *   widgets beside it, so the width is used instead of left empty under a wide card.
+     * - Everything else keeps the card on top and the favorites under it.
      */
-    private fun applyCompactHome(root: View, appSettings: Settings, isLauncherActive: Boolean) {
-        val config = resources.configuration
-        val small = config.screenHeightDp < COMPACT_HEIGHT_DP || config.screenWidthDp < COMPACT_WIDTH_DP
-        val compact = isLauncherActive && small
-        compactHome = compact
+    private fun applyHomeLayout(root: View, appSettings: Settings, isLauncherActive: Boolean) {
         val card = root.findViewById<View>(R.id.home_primary_card) ?: return
         val content = root.findViewById<View>(R.id.home_primary_content) ?: return
         val area = root.findViewById<View>(R.id.home_favorites_area) ?: return
+        val column = area.parent as? LinearLayout ?: return
+        val config = resources.configuration
+
+        val small = config.screenHeightDp < COMPACT_HEIGHT_DP || config.screenWidthDp < COMPACT_WIDTH_DP
+        val compact = isLauncherActive && small
+        val wide = isLauncherActive &&
+            config.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            config.screenWidthDp >= WIDE_WIDTH_DP
+        compactHome = compact
+        ultrawideHome = wide
 
         content.visibility = if (compact) View.GONE else View.VISIBLE
         val cardShown = !compact || appSettings.showHomeClock || appSettings.showHomeSpeed
         card.visibility = if (cardShown) View.VISIBLE else View.GONE
 
-        val cardParams = card.layoutParams as? LinearLayout.LayoutParams ?: return
-        val cardHeight = if (compact) ViewGroup.LayoutParams.WRAP_CONTENT else 0
-        val cardWeight = if (compact) 0f else 1f
-        if (cardParams.height != cardHeight || cardParams.weight != cardWeight) {
-            cardParams.height = cardHeight
-            cardParams.weight = cardWeight
-            card.layoutParams = cardParams
+        val orientation = if (wide) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        if (column.orientation != orientation) column.orientation = orientation
+
+        (card.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+            val width = if (wide) 0 else ViewGroup.LayoutParams.MATCH_PARENT
+            val height = when {
+                wide -> ViewGroup.LayoutParams.MATCH_PARENT
+                compact -> ViewGroup.LayoutParams.WRAP_CONTENT
+                else -> 0
+            }
+            val weight = when {
+                wide -> 1.6f
+                compact -> 0f
+                else -> 1f
+            }
+            if (params.width != width || params.height != height || params.weight != weight) {
+                params.width = width
+                params.height = height
+                params.weight = weight
+                card.layoutParams = params
+            }
         }
 
-        val areaParams = area.layoutParams as? LinearLayout.LayoutParams ?: return
-        val areaHeight = if (compact) 0 else ViewGroup.LayoutParams.WRAP_CONTENT
-        val areaWeight = if (compact) 1f else 0f
-        if (areaParams.height != areaHeight || areaParams.weight != areaWeight) {
-            areaParams.height = areaHeight
-            areaParams.weight = areaWeight
-            area.layoutParams = areaParams
-        }
-    }
-
-    /**
-     * On an ultrawide unit the card did not need to run edge to edge: a panel that wide puts the
-     * text on one end and the time on the other. Above [R.dimen.home_content_max_width] the card
-     * and the favorite apps keep that width and sit centered in the column.
-     */
-    private fun applyContentWidth(root: View) {
-        if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) return
-        val column = root.findViewById<View>(R.id.home_primary_card)?.parent as? View ?: return
-        val available = column.width - column.paddingLeft - column.paddingRight
-        if (available <= 0) return
-        val cap = resources.getDimensionPixelSize(R.dimen.home_content_max_width)
-        val width = minOf(available, cap)
-        listOf(R.id.home_primary_card, R.id.home_favorites_area).forEach { id ->
-            val view = root.findViewById<View>(id) ?: return@forEach
-            val params = view.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
-            if (params.width == width && params.gravity == Gravity.CENTER_HORIZONTAL) return@forEach
-            params.width = width
-            params.gravity = Gravity.CENTER_HORIZONTAL
-            view.layoutParams = params
+        (area.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+            val width = if (wide) 0 else ViewGroup.LayoutParams.MATCH_PARENT
+            val height = when {
+                wide -> ViewGroup.LayoutParams.MATCH_PARENT
+                compact -> 0
+                else -> ViewGroup.LayoutParams.WRAP_CONTENT
+            }
+            val weight = if (wide || compact) 1f else 0f
+            if (params.width != width || params.height != height || params.weight != weight) {
+                params.width = width
+                params.height = height
+                params.weight = weight
+                area.layoutParams = params
+            }
         }
     }
 
@@ -708,14 +717,19 @@ class HomeFragment : Fragment() {
         } else 0
         val columnHeight = column.height - column.paddingTop - column.paddingBottom - below
         val cardMin = cardMinimumHeight(card)
-        val room = WidgetStripPolicy.roomFor(columnHeight, cardMin, appsRow.height, gap)
         val content = card.findViewById<View>(R.id.home_primary_content)
         val compact = content != null && content.visibility != View.VISIBLE
+        // Wide home: the card sits beside this column, so its height is not part of the room.
+        val room = if (ultrawideHome) {
+            columnHeight - appsRow.height - gap
+        } else {
+            WidgetStripPolicy.roomFor(columnHeight, cardMin, appsRow.height, gap)
+        }
         val minPx = ctx.resources.getDimensionPixelSize(R.dimen.home_widget_strip_min)
-        val height = if (compact) {
-            // No main button to protect here: the widgets take everything the favorite apps row
-            // leaves, so the compact home is not a small strip with a lot of empty screen under it.
-            (columnHeight - cardMin - gap * 2 - appsRow.height).coerceAtLeast(minPx)
+        val height = if (compact || ultrawideHome) {
+            // No main button to protect: the widgets take everything the favorite apps row leaves,
+            // so the home is not a small strip with a lot of empty screen under it.
+            room.coerceAtLeast(minPx)
         } else {
             WidgetStripPolicy.height(
                 roomPx = room,
@@ -1950,6 +1964,8 @@ class HomeFragment : Fragment() {
         /** Where the main button's card stops fitting and the favorites take over. */
         private const val COMPACT_HEIGHT_DP = 360
         private const val COMPACT_WIDTH_DP = 400
+        /** Where the unit is wide enough for the card and the favorites side by side. */
+        private const val WIDE_WIDTH_DP = 1100
         fun resetAutoStart() {
             hasAutoStarted = false
             hasCheckedNativeDriverSelection = false
