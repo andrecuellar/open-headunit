@@ -1961,35 +1961,22 @@ class AapProjectionActivity : SurfaceActivity(), IProjectionView.Callbacks, Vide
      * Exact where the confirm window is a guess, and it is what catches an outgoing call whose
      * dialling outlasts the window. API 31+; below it the window is the whole story.
      */
-    // Untyped on purpose: the listener interface is API 31, and naming it here fails to resolve
-    // the whole class on Android 8 with a NoClassDefFoundError the guards below cannot prevent.
-    private var audioModeListener: Any? = null
+    // An opaque handle on purpose: the watcher names an interface that only exists from API 31, and
+    // a field of that type would be resolved when this class is verified on an older unit.
+    private var audioModeWatcher: Any? = null
 
     private fun registerAudioModeListener() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        try {
-            val listener = android.media.AudioManager.OnModeChangedListener { mode ->
-                val callish = CallState.isCallActive(mode, MicRecorder.holdsCommunicationMode) ||
-                    CallState.isCallStarting(mode)
-                if (!isForeground && callish) maybeOpenCallRaiseEpisode(fromModeChange = true)
-            }
-            (getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager)
-                .addOnModeChangedListener(ContextCompat.getMainExecutor(this), listener)
-            audioModeListener = listener
-        } catch (e: Exception) {
-            AppLog.w("AapProjectionActivity: Could not watch the audio mode: ${e.message}")
+        audioModeWatcher = AudioModeWatcher.start(this) { mode ->
+            val callish = CallState.isCallActive(mode, MicRecorder.holdsCommunicationMode) ||
+                CallState.isCallStarting(mode)
+            if (!isForeground && callish) maybeOpenCallRaiseEpisode(fromModeChange = true)
         }
     }
 
     private fun unregisterAudioModeListener() {
-        val listener = audioModeListener ?: return
-        audioModeListener = null
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        try {
-            (getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager)
-                .removeOnModeChangedListener(listener as android.media.AudioManager.OnModeChangedListener)
-        } catch (_: Exception) {
-        }
+        val handle = audioModeWatcher ?: return
+        audioModeWatcher = null
+        AudioModeWatcher.stop(handle)
     }
 
     override fun onUserLeaveHint() {
