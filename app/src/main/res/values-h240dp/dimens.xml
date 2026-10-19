@@ -1,0 +1,39 @@
+<resources>
+    <!--
+        Screens shorter than 320dp, which is where a 480x240 unit lives. The values from
+        values-h320dp do not apply there because a height qualifier means "at least", so this is
+        one step smaller again. At this size the widget row is left out on purpose (its minimum is
+        above what is left over), and the main button keeps everything it needs.
+    -->
+    <dimen name="home_gap">4dp</dimen>
+    <dimen name="home_panel_radius">10dp</dimen>
+    <dimen name="home_tile_radius">8dp</dimen>
+    <dimen name="home_tile_size">44dp</dimen>
+    <dimen name="home_tile_icon">16dp</dimen>
+    <dimen name="home_tile_label">8sp</dimen>
+    <dimen name="home_exit_height">32dp</dimen>
+    <dimen name="home_card_padding_h">8dp</dimen>
+    <dimen name="home_card_padding_v">4dp</dimen>
+    <dimen name="home_card_icon_tile">32dp</dimen>
+    <dimen name="home_card_icon">18dp</dimen>
+    <dimen name="home_card_kicker">9sp</dimen>
+    <dimen name="home_card_title">16sp</dimen>
+    <dimen name="home_card_subtitle">10sp</dimen>
+    <dimen name="home_cta_height">38dp</dimen>
+    <dimen name="home_cta_min_width">120dp</dimen>
+    <dimen name="home_cta_text">12sp</dimen>
+    <dimen name="home_secondary_cta_height">30dp</dimen>
+    <dimen name="home_secondary_cta_text">10sp</dimen>
+    <dimen name="home_countdown_size">28dp</dimen>
+    <dimen name="home_countdown_text">13sp</dimen>
+    <dimen name="home_favorites_height">48dp</dimen>
+    <dimen name="home_favorite_icon">18dp</dimen>
+    <dimen name="home_info_time">12sp</dimen>
+    <dimen name="home_info_date">8sp</dimen>
+    <dimen name="home_info_speed">12sp</dimen>
+    <dimen name="home_info_gap_wide">6dp</dimen>
+    <dimen name="home_info_min_text">60dp</dimen>
+    <dimen name="home_widget_padding">2dp</dimen>
+    <dimen name="home_widget_strip_min">90dp</dimen>
+    <dimen name="home_widget_strip_max">110dp</dimen>
+</resources>

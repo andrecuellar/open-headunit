@@ -22,4 +22,13 @@ object WidgetStripPolicy {
         if (roomPx < minPx) return 0
         return tallestWidgetPx.coerceIn(minPx, minOf(roomPx, maxPx))
     }
+
+    /**
+     * What the row is allowed to take: the column, less the main button's own content and the
+     * favorite apps row, less the two dividing gaps between them (the main button to the apps row,
+     * and the apps row to this one). The gaps are dividers the layout draws, not children, so
+     * forgetting them is how the row ended up taking a few pixels from the main button.
+     */
+    fun roomFor(columnPx: Int, cardMinPx: Int, appsRowPx: Int, gapPx: Int): Int =
+        columnPx - cardMinPx - appsRowPx - gapPx * 2
 }

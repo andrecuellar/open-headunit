@@ -38,4 +38,10 @@ class WidgetStripPolicyTest {
     fun `a negative room from a screen mid layout leaves the row out`() {
         assertEquals(0, WidgetStripPolicy.height(-300, 72, 220, 110))
     }
+
+    @Test
+    fun `the room takes both dividers out of the column`() {
+        // 560dp column, a main button that needs 296dp and a 120dp apps row, with 20dp gaps.
+        assertEquals(104, WidgetStripPolicy.roomFor(560, 296, 120, 20))
+    }
 }

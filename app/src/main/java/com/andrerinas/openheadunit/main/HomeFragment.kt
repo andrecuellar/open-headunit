@@ -578,8 +578,12 @@ class HomeFragment : Fragment() {
         scroll.visibility = View.VISIBLE
         val addTileHeight = ctx.resources.getDimensionPixelSize(R.dimen.home_favorites_height)
         val tallest = ids.maxOfOrNull { HomeWidgets.minHeightPx(ctx, it) } ?: 0
-        // The card has to be laid out before it can say how much of itself it cannot give up.
-        root.doOnLayout { fitWidgetStrip(root, maxOf(tallest, addTileHeight)) }
+        // One frame later: changing the row's height or hiding it inside the layout pass does not
+        // take, and the main button is left with the space the row was not going to use.
+        root.post {
+            if (!isAdded || view !== root) return@post
+            fitWidgetStrip(root, maxOf(tallest, addTileHeight))
+        }
     }
 
     /** @return the frame that holds the widget, or null when its provider cannot draw any more. */
@@ -628,7 +632,7 @@ class HomeFragment : Fragment() {
         } else 0
         val columnHeight = column.height - column.paddingTop - column.paddingBottom - below
         val cardMin = cardMinimumHeight(card)
-        val room = columnHeight - appsRow.height - gap - cardMin
+        val room = WidgetStripPolicy.roomFor(columnHeight, cardMin, appsRow.height, gap)
 
         val height = WidgetStripPolicy.height(
             roomPx = room,
@@ -653,23 +657,20 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * The height of the main button that it cannot give up: its own padding plus every child that
-     * is not one of the spacers that absorb the slack. Measured rather than guessed, because how
-     * tall the title is depends on the phone name and on the screen.
+     * The height the main button cannot give up: its content measured with no height limit, so the
+     * answer does not depend on how much room the card happens to have right now. Measuring the
+     * children as they currently sit was the bug: once the card was squeezed they reported the
+     * squeezed heights, the arithmetic believed it, and it kept the squeeze.
      */
     private fun cardMinimumHeight(card: View): Int {
-        // The card is a frame with the content inside it, so the minimum is the content's own.
         val content = card.findViewById<View>(R.id.home_primary_content) ?: return 0
-        val children = content as? ViewGroup ?: return 0
-        var height = content.paddingTop + content.paddingBottom
-        for (i in 0 until children.childCount) {
-            val child = children.getChildAt(i)
-            if (child.visibility != View.VISIBLE) continue
-            val params = child.layoutParams as? LinearLayout.LayoutParams ?: continue
-            if (params.weight > 0f) continue
-            height += child.measuredHeight + params.topMargin + params.bottomMargin
-        }
-        return height
+        val width = if (content.width > 0) content.width else card.width
+        if (width <= 0) return 0
+        content.measure(
+            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        return content.measuredHeight
     }
 
     /** Tells every hosted widget the box it ended up with, so one that reflows lays itself out. */
