@@ -309,9 +309,10 @@ class HomeFragment : Fragment() {
             return
         }
         val usbPhone = detectedUsbPhone(ctx)
+        val chosen = HomeUiHelper.chosenConnections(appSettings)
         val decision = HomePrimaryPolicy.decide(
             HomePrimaryPolicy.Input(
-                chosen = HomeUiHelper.chosenConnections(appSettings),
+                chosen = chosen,
                 lastConnection = HomeUiHelper.lastConnection(appSettings),
                 usbPhoneDetected = usbPhone != null,
                 sessionActive = commManager.isConnected,
@@ -321,7 +322,15 @@ class HomeFragment : Fragment() {
         )
         this.decision = decision
         val palette = homePalette(ctx)
-        HomeUiHelper.applyBar(ctx, root, appSettings, decision.barConnections, palette)
+        // On the compact home the card is gone, so the bar carries every chosen connection: the one
+        // the card would have offered included. Otherwise a unit with a single chosen mode has no
+        // way to start it.
+        val barConnections = if (compactHome && decision.primary in chosen && decision.primary !in decision.barConnections) {
+            decision.barConnections + decision.primary
+        } else {
+            decision.barConnections
+        }
+        HomeUiHelper.applyBar(ctx, root, appSettings, barConnections, palette)
         HomeUiHelper.applyPrimaryCard(
             ctx, root, appSettings, decision, usbPhone?.let { phoneName(it) }, reconnectSecondsLeft, palette
         )
