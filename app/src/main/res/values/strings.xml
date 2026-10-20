@@ -1348,6 +1348,7 @@
     <string name="home_kicker_wireless">Wireless</string>
     <string name="home_title_active">Your phone is connected</string>
     <string name="home_title_reconnecting">Reconnecting</string>
+    <string name="home_title_connecting">Connecting to your phone</string>
     <string name="home_title_searching">Searching for your phone…</string>
     <string name="home_title_phone_detected">%1$s detected</string>
     <string name="home_title_phone_detected_generic">Phone detected</string>

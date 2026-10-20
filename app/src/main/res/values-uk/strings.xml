@@ -1263,6 +1263,7 @@
     <string name="home_kicker_wireless">Бездротово</string>
     <string name="home_title_active">Телефон підключено</string>
     <string name="home_title_reconnecting">Перепідключення</string>
+    <string name="home_title_connecting">Підключення до телефона</string>
     <string name="home_title_searching">Пошук телефону…</string>
     <string name="home_title_phone_detected">Знайдено %1$s</string>
     <string name="home_title_phone_detected_generic">Телефон знайдено</string>

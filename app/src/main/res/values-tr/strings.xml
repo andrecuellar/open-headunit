@@ -1257,6 +1257,7 @@
     <string name="home_kicker_wireless">Kablosuz</string>
     <string name="home_title_active">Telefonun bağlı</string>
     <string name="home_title_reconnecting">Yeniden bağlanıyor</string>
+    <string name="home_title_connecting">Telefonunuza bağlanılıyor</string>
     <string name="home_title_searching">Telefonun aranıyor…</string>
     <string name="home_title_phone_detected">%1$s algılandı</string>
     <string name="home_title_phone_detected_generic">Telefon algılandı</string>

@@ -1262,6 +1262,7 @@
     <string name="home_kicker_wireless">Bezdrátově</string>
     <string name="home_title_active">Telefon je připojen</string>
     <string name="home_title_reconnecting">Znovu se připojuji</string>
+    <string name="home_title_connecting">Připojuji se k telefonu</string>
     <string name="home_title_searching">Hledám váš telefon…</string>
     <string name="home_title_phone_detected">Zjištěn %1$s</string>
     <string name="home_title_phone_detected_generic">Telefon zjištěn</string>

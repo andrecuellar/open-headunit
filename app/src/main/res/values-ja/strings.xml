@@ -1267,6 +1267,7 @@
     <string name="home_kicker_wireless">ワイヤレス</string>
     <string name="home_title_active">スマートフォンが接続されています</string>
     <string name="home_title_reconnecting">再接続中</string>
+    <string name="home_title_connecting">スマートフォンに接続しています</string>
     <string name="home_title_searching">スマートフォンを検索中…</string>
     <string name="home_title_phone_detected">%1$s を検出しました</string>
     <string name="home_title_phone_detected_generic">スマートフォンを検出しました</string>

@@ -1310,6 +1310,7 @@
     <string name="home_kicker_wireless">Nirkabel</string>
     <string name="home_title_active">Ponsel Anda terhubung</string>
     <string name="home_title_reconnecting">Menghubungkan ulang</string>
+    <string name="home_title_connecting">Menghubungkan ke ponsel Anda</string>
     <string name="home_title_searching">Mencari ponsel Anda…</string>
     <string name="home_title_phone_detected">%1$s terdeteksi</string>
     <string name="home_title_phone_detected_generic">Ponsel terdeteksi</string>

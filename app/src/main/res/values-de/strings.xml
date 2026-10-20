@@ -1266,6 +1266,7 @@
     <string name="home_kicker_wireless">Kabellos</string>
     <string name="home_title_active">Dein Handy ist verbunden</string>
     <string name="home_title_reconnecting">Verbinde erneut</string>
+    <string name="home_title_connecting">Verbinde mit deinem Handy</string>
     <string name="home_title_searching">Suche dein Handy…</string>
     <string name="home_title_phone_detected">%1$s erkannt</string>
     <string name="home_title_phone_detected_generic">Handy erkannt</string>

@@ -1263,6 +1263,7 @@
     <string name="home_kicker_wireless">Sem fio</string>
     <string name="home_title_active">Seu celular está conectado</string>
     <string name="home_title_reconnecting">Reconectando</string>
+    <string name="home_title_connecting">Conectando ao seu celular</string>
     <string name="home_title_searching">Procurando seu celular…</string>
     <string name="home_title_phone_detected">%1$s detectado</string>
     <string name="home_title_phone_detected_generic">Celular detectado</string>

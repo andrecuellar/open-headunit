@@ -1308,6 +1308,7 @@
     <string name="home_kicker_wireless">वायरलेस</string>
     <string name="home_title_active">आपका फ़ोन कनेक्ट है</string>
     <string name="home_title_reconnecting">फिर से कनेक्ट हो रहा है</string>
+    <string name="home_title_connecting">आपके फ़ोन से कनेक्ट हो रहा है</string>
     <string name="home_title_searching">आपका फ़ोन खोजा जा रहा है…</string>
     <string name="home_title_phone_detected">%1$s मिला</string>
     <string name="home_title_phone_detected_generic">फ़ोन मिला</string>

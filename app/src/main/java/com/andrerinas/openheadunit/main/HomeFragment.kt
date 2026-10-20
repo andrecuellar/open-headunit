@@ -76,6 +76,13 @@ import com.andrerinas.openheadunit.connection.wifi.WifiLauncherMode
 import com.andrerinas.openheadunit.connection.wifi.WirelessSelectionPolicy
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import android.os.SystemClock
+import com.andrerinas.openheadunit.connection.ConnectionNetworkDetail
+import com.andrerinas.openheadunit.connection.ConnectionNetworkDetailPolicy
+import com.andrerinas.openheadunit.connection.ConnectionStage
+import com.andrerinas.openheadunit.connection.ConnectionStageTracker
+import com.andrerinas.openheadunit.connection.CommManager
+import com.andrerinas.openheadunit.connection.PhoneExitQuietPolicy
 import kotlinx.coroutines.isActive
 import kotlin.math.roundToInt
 
@@ -118,6 +125,7 @@ class HomeFragment : Fragment() {
     private var decision: HomePrimaryPolicy.Decision? = null
     private var cachedPalette: HomeUiHelper.Palette? = null
     private var reconnectCountdown: Job? = null
+    private var stageQuietJob: Job? = null
     private var reconnectTarget: HomePrimaryPolicy.Connection? = null
     private var reconnectSecondsLeft = 0
     private var autoConnectCancelled = false
@@ -220,6 +228,18 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 AapService.scanningState.collect { renderHome() }
+            }
+        }
+
+        // The card and the tiles tell the bring-up now, so they follow the tracker the pill reads.
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionStageTracker.stage.collect { renderHome() }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConnectionStageTracker.network.collect { renderHome() }
             }
         }
 
@@ -347,9 +367,12 @@ class HomeFragment : Fragment() {
                 chosen = chosen,
                 lastConnection = HomeUiHelper.lastConnection(appSettings),
                 usbPhoneDetected = usbPhone != null,
-                sessionActive = commManager.isConnected,
+                sessionActive = sessionLive(),
                 reconnectTarget = reconnectTarget,
-                wifiScanning = AapService.scanningState.value
+                wifiScanning = AapService.scanningState.value,
+                sessionConnection = transportConnection().takeIf { sessionLive() },
+                stage = shownStage(),
+                attemptConnection = transportConnection().takeIf { !sessionLive() }
             )
         )
         this.decision = decision
@@ -363,12 +386,74 @@ class HomeFragment : Fragment() {
         } else {
             decision.barConnections
         }
-        HomeUiHelper.applyBar(ctx, root, appSettings, barConnections, palette)
+        HomeUiHelper.applyBar(ctx, root, appSettings, barConnections, palette, decision.tiles)
         HomeUiHelper.applyPrimaryCard(
-            ctx, root, appSettings, decision, usbPhone?.let { phoneName(it) }, reconnectSecondsLeft, palette
+            ctx, root, appSettings, decision, usbPhone?.let { phoneName(it) }, reconnectSecondsLeft, palette,
+            networkLine = ConnectionStageTracker.network.value?.let { networkText(it) }
         )
         HomeUiHelper.fitDriverBar(root, appSettings.homeButtonScalePercent)
         renderHomeInfo()
+    }
+
+    /**
+     * Android Auto is up, or about to cover the home. Narrower than [CommManager.isConnected],
+     * which is already true while the connection is being secured: that part is a step the card
+     * names now, not a session to go back to.
+     */
+    private fun sessionLive(): Boolean = commManager.connectionState.value.let {
+        it is CommManager.ConnectionState.HandshakeComplete || it is CommManager.ConnectionState.TransportStarted
+    }
+
+    /** What the session, or the attempt in flight, goes over. Null without a connection. */
+    private fun transportConnection(): HomePrimaryPolicy.Connection? = when {
+        !commManager.isConnected -> null
+        commManager.isUsbSession -> HomePrimaryPolicy.Connection.USB
+        commManager.isLoopbackSession -> HomePrimaryPolicy.Connection.SELF
+        else -> HomePrimaryPolicy.Connection.WIFI
+    }
+
+    /**
+     * The bring-up step, held back for a moment after the phone ended the session itself, the
+     * same as the status pill: the listeners reopen right behind a bye-bye and their step would
+     * read as a reconnect nobody asked for.
+     */
+    private fun shownStage(): ConnectionStage? {
+        val now = SystemClock.elapsedRealtime()
+        val leftAt = ConnectionStageTracker.phoneLeftAtMs
+        stageQuietJob?.cancel()
+        if (!PhoneExitQuietPolicy.suppressesPill(leftAt, now)) {
+            // A path that connects without reporting steps still has a connection on its way.
+            val inFlight = commManager.isConnected && !sessionLive()
+            return ConnectionStageTracker.stage.value ?: if (inFlight) ConnectionStage.CONNECTING else null
+        }
+        stageQuietJob = viewLifecycleOwner.lifecycleScope.launch {
+            delay(PhoneExitQuietPolicy.remainingMs(leftAt, now))
+            renderHome()
+        }
+        return null
+    }
+
+    private fun networkText(detail: ConnectionNetworkDetail): String {
+        val line = ConnectionNetworkDetailPolicy.lineFor(detail)
+        return getString(line.id, *line.args.toTypedArray())
+    }
+
+    /**
+     * A tile whose connection is on its way leads to the card, where the step and Cancel are,
+     * instead of starting a second attempt.
+     */
+    private fun showsBringUp(connection: HomePrimaryPolicy.Connection): Boolean {
+        if (decision?.tiles?.get(connection) != HomePrimaryPolicy.TileState.CONNECTING) return false
+        showFirstPage(animate = true)
+        return true
+    }
+
+    private fun onPrimaryCancelClicked() {
+        if (decision?.status == HomePrimaryPolicy.Status.RECONNECTING) {
+            cancelAutoConnectCountdown()
+        } else {
+            (activity as? MainActivity)?.cancelBringUp("home Cancel")
+        }
     }
 
     /**
@@ -544,7 +629,10 @@ class HomeFragment : Fragment() {
         if (!isAdded || view !== root) return
         val card = root.findViewById<View>(R.id.home_primary_card) ?: return
         if (card.height <= 0) return
+        // The network line goes first, and only when the card asked for it: unlike the other two it
+        // is not always meant to be there.
         val optional = listOfNotNull(
+            root.findViewById<View>(R.id.home_primary_detail)?.takeIf { it.visibility == View.VISIBLE },
             root.findViewById<View>(R.id.home_primary_subtitle),
             root.findViewById<View>(R.id.home_primary_kicker)
         )
@@ -1428,7 +1516,7 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), SettingsActivity::class.java))
         }
         primaryAction?.setOnClickListener { onPrimaryActionClicked() }
-        primaryCancel?.setOnClickListener { cancelAutoConnectCountdown() }
+        primaryCancel?.setOnClickListener { onPrimaryCancelClicked() }
         favoriteSlots.forEachIndexed { slot, slotView ->
             slotView.setOnClickListener { onFavoriteClicked(slot) }
             slotView.setOnLongClickListener { showFavoriteMenu(slot, it) }
@@ -1469,6 +1557,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun onSelfModeClicked() {
+        if (showsBringUp(HomePrimaryPolicy.Connection.SELF)) return
         if (commManager.isConnected) {
             openProjection()
         } else {
@@ -1496,6 +1585,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun onUsbClicked() {
+        if (showsBringUp(HomePrimaryPolicy.Connection.USB)) return
         // Already connected to Android Auto - just show projection
         if (commManager.isConnected) {
             openProjection()
@@ -1560,6 +1650,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun onWifiClicked() {
+        if (showsBringUp(HomePrimaryPolicy.Connection.WIFI)) return
         // With a session up the wireless tile is the way back to it, the same as the USB one. It
         // used to do nothing, and on a page without the main button nothing else led back.
         if (commManager.isConnected) {
@@ -1752,11 +1843,14 @@ class HomeFragment : Fragment() {
         // A host that is not listening holds an empty widget view, so this runs before the row is
         // built in onResume.
         HomeWidgets.startListening(requireContext())
+        // The classic home has no card, so the pill keeps telling the bring-up there.
+        mainViewModel.homeShowsBringUp.value = !isClassicHome
     }
 
     override fun onStop() {
         super.onStop()
         HomeWidgets.stopListening()
+        mainViewModel.homeShowsBringUp.value = false
     }
 
     override fun onPause() {

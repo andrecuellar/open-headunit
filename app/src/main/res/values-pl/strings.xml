@@ -1261,6 +1261,7 @@
     <string name="home_kicker_wireless">Bezprzewodowo</string>
     <string name="home_title_active">Telefon jest połączony</string>
     <string name="home_title_reconnecting">Ponowne łączenie</string>
+    <string name="home_title_connecting">Łączę z telefonem</string>
     <string name="home_title_searching">Szukam telefonu…</string>
     <string name="home_title_phone_detected">Wykryto %1$s</string>
     <string name="home_title_phone_detected_generic">Wykryto telefon</string>

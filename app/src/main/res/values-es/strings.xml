@@ -1270,6 +1270,7 @@
     <string name="home_kicker_wireless">Inalámbrico</string>
     <string name="home_title_active">Tu teléfono está conectado</string>
     <string name="home_title_reconnecting">Reconectando</string>
+    <string name="home_title_connecting">Conectando con tu teléfono</string>
     <string name="home_title_searching">Buscando tu teléfono…</string>
     <string name="home_title_phone_detected">%1$s detectado</string>
     <string name="home_title_phone_detected_generic">Teléfono detectado</string>

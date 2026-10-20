@@ -1265,6 +1265,7 @@
     <string name="home_kicker_wireless">Không dây</string>
     <string name="home_title_active">Điện thoại đã kết nối</string>
     <string name="home_title_reconnecting">Đang kết nối lại</string>
+    <string name="home_title_connecting">Đang kết nối với điện thoại</string>
     <string name="home_title_searching">Đang tìm điện thoại…</string>
     <string name="home_title_phone_detected">Đã phát hiện %1$s</string>
     <string name="home_title_phone_detected_generic">Đã phát hiện điện thoại</string>

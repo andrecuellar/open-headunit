@@ -1261,6 +1261,7 @@
     <string name="home_kicker_wireless">Без проводов</string>
     <string name="home_title_active">Телефон подключён</string>
     <string name="home_title_reconnecting">Переподключение</string>
+    <string name="home_title_connecting">Подключение к телефону</string>
     <string name="home_title_searching">Поиск телефона…</string>
     <string name="home_title_phone_detected">Найден %1$s</string>
     <string name="home_title_phone_detected_generic">Телефон найден</string>

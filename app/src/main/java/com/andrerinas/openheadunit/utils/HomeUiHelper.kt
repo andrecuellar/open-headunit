@@ -24,10 +24,12 @@ import androidx.annotation.IdRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import com.andrerinas.openheadunit.R
+import com.andrerinas.openheadunit.connection.ConnectionStage
 import com.andrerinas.openheadunit.main.BarFitPolicy
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Connection
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Decision
 import com.andrerinas.openheadunit.main.HomePrimaryPolicy.Status
+import com.andrerinas.openheadunit.main.HomePrimaryPolicy.TileState
 import com.andrerinas.openheadunit.main.HomeThemePolicy.Mode
 
 /** Paints the home screen. What it shows is decided by [com.andrerinas.openheadunit.main.HomePrimaryPolicy]. */
@@ -37,6 +39,7 @@ object HomeUiHelper {
     private const val RIPPLE_COLOR_ON_DARK = 0x33FFFFFF
     private const val RIPPLE_COLOR_EXTREME = 0x1FFFFFFF
     private const val ACCENT_WASH_ALPHA = 0x29
+    private const val PROGRESS_TRACK_ALPHA = 0x40
     private const val EXTREME_APP_ICON_ALPHA = 0.75f
     private const val EXTREME_CUSTOM_COLOR_DIM = 0.8f
     // Where black text starts to contrast better than white: (L + 0.05) / 0.05 = 1.05 / (L + 0.05).
@@ -270,11 +273,56 @@ object HomeUiHelper {
         }
     }
 
-    fun applyBar(context: Context, rootView: View, settings: Settings, barConnections: List<Connection>, palette: Palette) {
+    /**
+     * [tiles] says which connection is running or on its way. That tile wears the connection's
+     * color and says so in place of its name, which the icon still gives: on a page without the
+     * main button it is the only sign of either, and a third line would not fit the smallest tiles.
+     */
+    fun applyBar(
+        context: Context,
+        rootView: View,
+        settings: Settings,
+        barConnections: List<Connection>,
+        palette: Palette,
+        tiles: Map<Connection, TileState> = emptyMap()
+    ) {
         Connection.values().forEach { connection ->
             val tile = rootView.findViewById<ViewGroup>(tileId(connection)) ?: return@forEach
             tile.visibility = if (connection in barConnections) View.VISIBLE else View.GONE
-            paintTile(tile, tileBackground(context, palette), palette.text, palette.text)
+            val label = (0 until tile.childCount).map { tile.getChildAt(it) }.filterIsInstance<TextView>().firstOrNull()
+            // The name from the XML, kept so a tile that stops connecting gets it back.
+            val name = (label?.getTag(R.id.home_tile_name) as? CharSequence)
+                ?: label?.text?.also { label.setTag(R.id.home_tile_name, it) }
+            val state = tiles[connection] ?: TileState.IDLE
+            val status = when (state) {
+                TileState.ACTIVE -> context.getString(R.string.connected)
+                TileState.CONNECTING -> context.getString(R.string.stage_connecting)
+                TileState.IDLE -> null
+            }
+            label?.text = status ?: name
+            tile.contentDescription = if (status != null && name != null) "$name, $status" else null
+            val radius = context.resources.getDimension(R.dimen.home_tile_radius)
+            val color = accentColor(settings, connection, palette)
+            when (state) {
+                TileState.ACTIVE -> {
+                    val onColor = readableOn(color)
+                    paintTile(tile, pressable(color, radius), onColor, onColor)
+                }
+                TileState.CONNECTING -> {
+                    val strokePx = dp(context, 2)
+                    paintTile(
+                        tile,
+                        pressable(
+                            palette.ripple,
+                            { shape(palette.tile, radius, color, strokePx) },
+                            { shape(palette.tilePressed, radius, color, strokePx) }
+                        ),
+                        palette.text,
+                        palette.text
+                    )
+                }
+                TileState.IDLE -> paintTile(tile, tileBackground(context, palette), palette.text, palette.text)
+            }
         }
 
         val settingsTile = rootView.findViewById<ViewGroup>(R.id.settings_button) ?: return
@@ -382,10 +430,14 @@ object HomeUiHelper {
         decision: Decision,
         phoneName: String?,
         secondsLeft: Int,
-        palette: Palette
+        palette: Palette,
+        /** The WiFi Direct group, shown under the step while a connection comes up. */
+        networkLine: String? = null
     ) {
         val card = rootView.findViewById<View>(R.id.home_primary_card) ?: return
         val reconnecting = decision.status == Status.RECONNECTING
+        val connecting = decision.status == Status.CONNECTING
+        val stage = decision.stage
 
         val kicker = rootView.findViewById<TextView>(R.id.home_primary_kicker)
         val title = rootView.findViewById<TextView>(R.id.home_primary_title)
@@ -394,17 +446,27 @@ object HomeUiHelper {
         val icon = rootView.findViewById<ImageView>(R.id.home_primary_icon)
         kicker?.text = context.getString(kickerRes(decision))
         title?.text = title(context, decision, phoneName)
-        subtitle?.text = context.getString(subtitleRes(decision))
+        subtitle?.text = stage?.let { context.getString(it.label) } ?: context.getString(subtitleRes(decision))
         action?.text = context.getString(actionRes(decision))
+        // Nothing to start while a connection is on its way; Cancel is the one thing left to do.
+        action?.visibility = if (connecting) View.GONE else View.VISIBLE
         icon?.setImageResource(iconRes(decision.primary))
         val cancel = rootView.findViewById<TextView>(R.id.home_primary_cancel)
-        cancel?.visibility = if (reconnecting) View.VISIBLE else View.GONE
+        // The status pill's X lived here before: it stops the bring-up, listening included.
+        cancel?.visibility = if (reconnecting || stage != null) View.VISIBLE else View.GONE
         rootView.findViewById<TextView>(R.id.home_countdown)?.apply {
             visibility = if (reconnecting) View.VISIBLE else View.GONE
             text = secondsLeft.toString()
         }
+        val detail = rootView.findViewById<TextView>(R.id.home_primary_detail)
+        detail?.text = networkLine
+        detail?.visibility = if (stage != null && !networkLine.isNullOrEmpty()) View.VISIBLE else View.GONE
+        val progress = rootView.findViewById<View>(R.id.home_primary_progress)
+        progress?.visibility = if (connecting && stage != null) View.VISIBLE else View.GONE
+        if (connecting && stage != null) setProgress(rootView, stage.rank, ConnectionStage.STARTING_PROJECTION.rank)
 
         val color = accentColor(settings, decision.primary, palette)
+        paintProgress(context, rootView, color, palette)
         val resources = context.resources
         val panelRadius = resources.getDimension(R.dimen.home_panel_radius)
         val tileRadius = resources.getDimension(R.dimen.home_tile_radius)
@@ -418,7 +480,7 @@ object HomeUiHelper {
             card.background = rounded(color, panelRadius)
             iconTile?.background = rounded(shade, tileRadius)
             icon?.clearColorFilter()
-            listOf(kicker, title, subtitle).forEach { it?.setTextColor(Color.WHITE) }
+            listOf(kicker, title, subtitle, detail).forEach { it?.setTextColor(Color.WHITE) }
             action?.apply {
                 background = pressable(Color.WHITE, ctaRadius)
                 setTextColor(ColorUtils.darkenColor(color, 0.66f))
@@ -439,6 +501,7 @@ object HomeUiHelper {
         kicker?.setTextColor(color)
         title?.setTextColor(palette.text)
         subtitle?.setTextColor(palette.textMuted)
+        detail?.setTextColor(palette.textMuted)
         action?.apply {
             if (palette.mode == Mode.EXTREME_DARK) {
                 // An outline lights far fewer pixels than a filled button.
@@ -598,16 +661,36 @@ object HomeUiHelper {
     private fun title(context: Context, decision: Decision, phoneName: String?): String = when (decision.status) {
         Status.ACTIVE_SESSION -> context.getString(R.string.home_title_active)
         Status.RECONNECTING -> context.getString(R.string.home_title_reconnecting)
+        Status.CONNECTING -> context.getString(R.string.home_title_connecting)
         Status.SEARCHING -> context.getString(R.string.home_title_searching)
         Status.PHONE_DETECTED -> phoneName?.let { context.getString(R.string.home_title_phone_detected, it) }
             ?: context.getString(R.string.home_title_phone_detected_generic)
-        Status.READY -> context.getString(
+        Status.WAITING, Status.READY -> context.getString(
             when (decision.primary) {
                 Connection.USB -> R.string.home_title_usb_ready
                 Connection.WIFI -> R.string.home_title_wifi_ready
                 Connection.SELF -> R.string.home_title_self_ready
             }
         )
+    }
+
+    /** How far along the steps are, as two weighted halves: no measuring, and it works on API 16. */
+    private fun setProgress(rootView: View, done: Int, total: Int) {
+        val fill = rootView.findViewById<View>(R.id.home_primary_progress_fill) ?: return
+        val rest = rootView.findViewById<View>(R.id.home_primary_progress_rest) ?: return
+        val doneWeight = done.coerceIn(1, total).toFloat()
+        (fill.layoutParams as? LinearLayout.LayoutParams)?.let { it.weight = doneWeight; fill.layoutParams = it }
+        (rest.layoutParams as? LinearLayout.LayoutParams)?.let { it.weight = total - doneWeight; rest.layoutParams = it }
+    }
+
+    private fun paintProgress(context: Context, rootView: View, @ColorInt color: Int, palette: Palette) {
+        val track = rootView.findViewById<View>(R.id.home_primary_progress) ?: return
+        val fill = rootView.findViewById<View>(R.id.home_primary_progress_fill) ?: return
+        val radius = dp(context, 3).toFloat()
+        // Day cards wear the connection's color, so the bar is white on it; night cards are neutral.
+        val fillColor = if (palette.isDark) color else Color.WHITE
+        track.background = rounded(withAlpha(fillColor, PROGRESS_TRACK_ALPHA), radius)
+        fill.background = rounded(fillColor, radius)
     }
 
     private fun subtitleRes(decision: Decision): Int = when {

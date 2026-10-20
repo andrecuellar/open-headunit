@@ -1265,6 +1265,7 @@
     <string name="home_kicker_wireless">Wireless</string>
     <string name="home_title_active">Il tuo telefono è connesso</string>
     <string name="home_title_reconnecting">Riconnessione</string>
+    <string name="home_title_connecting">Connessione al telefono</string>
     <string name="home_title_searching">Ricerca del telefono…</string>
     <string name="home_title_phone_detected">%1$s rilevato</string>
     <string name="home_title_phone_detected_generic">Telefono rilevato</string>

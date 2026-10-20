@@ -1259,6 +1259,7 @@
     <string name="home_kicker_wireless">Wireless</string>
     <string name="home_title_active">Telefonul tău este conectat</string>
     <string name="home_title_reconnecting">Reconectare</string>
+    <string name="home_title_connecting">Mă conectez la telefon</string>
     <string name="home_title_searching">Se caută telefonul…</string>
     <string name="home_title_phone_detected">%1$s detectat</string>
     <string name="home_title_phone_detected_generic">Telefon detectat</string>

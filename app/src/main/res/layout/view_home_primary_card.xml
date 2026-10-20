@@ -91,6 +91,40 @@
             android:maxLines="2"
             android:textSize="@dimen/home_card_subtitle" />
 
+        <!-- While a connection comes up: the WiFi Direct group under the step, and how far along
+             the steps are. They took the status pill's place, which floated over the home. -->
+        <TextView
+            android:id="@+id/home_primary_detail"
+            style="@style/HomeCardText"
+            android:layout_marginTop="4dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="@dimen/home_card_subtitle"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/home_primary_progress"
+            android:layout_width="@dimen/home_cta_min_width"
+            android:layout_height="6dp"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:importantForAccessibility="no"
+            android:visibility="gone">
+
+            <View
+                android:id="@+id/home_primary_progress_fill"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <View
+                android:id="@+id/home_primary_progress_rest"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+        </LinearLayout>
+
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"

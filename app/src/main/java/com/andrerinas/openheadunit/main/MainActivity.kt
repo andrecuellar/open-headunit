@@ -363,12 +363,13 @@ class MainActivity : BaseActivity() {
     }
 
     /**
-     * The pill's X: ends the attempt this activity may be tracking, then has the service stop the
-     * stack and hold it down. [cancelAutoConnect] alone cannot reach the pre-handshake stages,
-     * which are the ones the pill spends most of its life showing.
+     * The pill's X, and the new home's Cancel that took the pill's place there: ends the attempt
+     * this activity may be tracking, then has the service stop the stack and hold it down.
+     * [cancelAutoConnect] alone cannot reach the pre-handshake stages, which are the ones the pill
+     * spends most of its life showing.
      */
-    private fun cancelBringUp() {
-        AppLog.i("MainActivity: status pill X pressed, stopping the bring-up")
+    fun cancelBringUp(source: String = "status pill X") {
+        AppLog.i("MainActivity: $source pressed, stopping the bring-up")
         // Read before the disconnect below, which drops the connection the service would ask.
         val stage = ConnectionStageTracker.stage.value
         val usbAttempt = App.provide(this).commManager.isUsbSession ||
@@ -537,6 +538,8 @@ class MainActivity : BaseActivity() {
                 ConnectionStageTracker.stage.collect { renderStagePill(it) }
             }
         }
+        // It does not move the tracker, so the pill has to be asked again when it changes.
+        viewModel.homeShowsBringUp.observe(this) { renderStagePill(ConnectionStageTracker.stage.value) }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 ConnectionStageTracker.network.collect { renderNetworkLine(it) }
@@ -591,9 +594,10 @@ class MainActivity : BaseActivity() {
         val now = SystemClock.elapsedRealtime()
         val phoneLeftQuiet =
             PhoneExitQuietPolicy.suppressesPill(ConnectionStageTracker.phoneLeftAtMs, now)
+        val homeTellsIt = viewModel.homeShowsBringUp.value == true
         // PILL_THEN_OVERLAY hands the screen to the overlay part-way through an attempt.
         // Re-raising the pill under it would undo that promotion.
-        val shown = if (stage == null || overlayOwnsScreen() || phoneLeftQuiet) null else stage
+        val shown = if (stage == null || overlayOwnsScreen() || phoneLeftQuiet || homeTellsIt) null else stage
         // What the user is actually being told, which no other line records. A reporter's
         // screenshot and their log can then be read against each other. A step the overlay hides
         // is still named: without that, a session where an auto-connect happened to be in flight
@@ -604,6 +608,7 @@ class MainActivity : BaseActivity() {
             val step = when {
                 shown != null -> shown.name
                 stage != null && phoneLeftQuiet -> "${stage.name} (not shown, the phone ended the session)"
+                stage != null && homeTellsIt -> "${stage.name} (not shown, the home's main button tells it)"
                 stage != null -> "${stage.name} (not shown, the overlay owns the screen)"
                 else -> "hidden"
             }

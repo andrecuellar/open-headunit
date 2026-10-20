@@ -1262,6 +1262,7 @@
     <string name="home_kicker_wireless">Draadloos</string>
     <string name="home_title_active">Je telefoon is verbonden</string>
     <string name="home_title_reconnecting">Opnieuw verbinden</string>
+    <string name="home_title_connecting">Verbinden met je telefoon</string>
     <string name="home_title_searching">Je telefoon zoeken…</string>
     <string name="home_title_phone_detected">%1$s gevonden</string>
     <string name="home_title_phone_detected_generic">Telefoon gevonden</string>

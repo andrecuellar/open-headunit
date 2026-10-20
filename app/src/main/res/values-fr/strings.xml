@@ -1302,6 +1302,7 @@
     <string name="home_kicker_wireless">Sans fil</string>
     <string name="home_title_active">Votre téléphone est connecté</string>
     <string name="home_title_reconnecting">Reconnexion</string>
+    <string name="home_title_connecting">Connexion à votre téléphone</string>
     <string name="home_title_searching">Recherche de votre téléphone…</string>
     <string name="home_title_phone_detected">%1$s détecté</string>
     <string name="home_title_phone_detected_generic">Téléphone détecté</string>

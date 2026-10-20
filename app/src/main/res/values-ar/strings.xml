@@ -1260,6 +1260,7 @@
     <string name="home_kicker_wireless">لاسلكي</string>
     <string name="home_title_active">هاتفك متصل</string>
     <string name="home_title_reconnecting">جارٍ إعادة الاتصال</string>
+    <string name="home_title_connecting">جارٍ الاتصال بهاتفك</string>
     <string name="home_title_searching">جارٍ البحث عن هاتفك…</string>
     <string name="home_title_phone_detected">تم اكتشاف %1$s</string>
     <string name="home_title_phone_detected_generic">تم اكتشاف هاتف</string>

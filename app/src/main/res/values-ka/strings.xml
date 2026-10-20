@@ -1243,6 +1243,7 @@
     <string name="home_kicker_wireless">უსადენო</string>
     <string name="home_title_active">ტელეფონი დაკავშირებულია</string>
     <string name="home_title_reconnecting">ხელახლა დაკავშირება</string>
+    <string name="home_title_connecting">ვუკავშირდები ტელეფონს</string>
     <string name="home_title_searching">ტელეფონის ძებნა…</string>
     <string name="home_title_phone_detected">აღმოჩენილია %1$s</string>
     <string name="home_title_phone_detected_generic">ტელეფონი აღმოჩენილია</string>

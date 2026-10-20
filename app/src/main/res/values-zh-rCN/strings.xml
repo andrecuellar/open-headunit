@@ -1260,6 +1260,7 @@
     <string name="home_kicker_wireless">无线</string>
     <string name="home_title_active">手机已连接</string>
     <string name="home_title_reconnecting">正在重新连接</string>
+    <string name="home_title_connecting">正在连接手机</string>
     <string name="home_title_searching">正在搜索手机…</string>
     <string name="home_title_phone_detected">已检测到 %1$s</string>
     <string name="home_title_phone_detected_generic">已检测到手机</string>

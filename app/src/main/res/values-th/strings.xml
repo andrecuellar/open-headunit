@@ -1308,6 +1308,7 @@
     <string name="home_kicker_wireless">ไร้สาย</string>
     <string name="home_title_active">โทรศัพท์ของคุณเชื่อมต่อแล้ว</string>
     <string name="home_title_reconnecting">กำลังเชื่อมต่อใหม่</string>
+    <string name="home_title_connecting">กำลังเชื่อมต่อกับโทรศัพท์ของคุณ</string>
     <string name="home_title_searching">กำลังค้นหาโทรศัพท์…</string>
     <string name="home_title_phone_detected">พบ %1$s</string>
     <string name="home_title_phone_detected_generic">พบโทรศัพท์</string>

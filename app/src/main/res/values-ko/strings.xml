@@ -1271,6 +1271,7 @@
     <string name="home_kicker_wireless">무선</string>
     <string name="home_title_active">휴대폰이 연결되었습니다</string>
     <string name="home_title_reconnecting">다시 연결 중</string>
+    <string name="home_title_connecting">휴대폰에 연결하는 중</string>
     <string name="home_title_searching">휴대폰 검색 중…</string>
     <string name="home_title_phone_detected">%1$s 감지됨</string>
     <string name="home_title_phone_detected_generic">휴대폰 감지됨</string>

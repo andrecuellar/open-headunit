@@ -1307,6 +1307,7 @@
     <string name="home_kicker_wireless">Sem fios</string>
     <string name="home_title_active">O seu telemóvel está ligado</string>
     <string name="home_title_reconnecting">A religar</string>
+    <string name="home_title_connecting">A ligar ao seu telemóvel</string>
     <string name="home_title_searching">A procurar o seu telemóvel…</string>
     <string name="home_title_phone_detected">%1$s detetado</string>
     <string name="home_title_phone_detected_generic">Telemóvel detetado</string>
