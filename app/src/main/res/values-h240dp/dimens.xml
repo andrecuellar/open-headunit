@@ -21,6 +21,7 @@
     <dimen name="home_card_subtitle">10sp</dimen>
     <dimen name="home_cta_height">38dp</dimen>
     <dimen name="home_cta_min_width">120dp</dimen>
+    <dimen name="home_progress_shine_width">32dp</dimen>
     <dimen name="home_cta_text">12sp</dimen>
     <dimen name="home_secondary_cta_height">30dp</dimen>
     <dimen name="home_secondary_cta_text">10sp</dimen>

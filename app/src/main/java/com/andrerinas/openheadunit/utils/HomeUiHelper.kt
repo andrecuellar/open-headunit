@@ -1,5 +1,6 @@
 package com.andrerinas.openheadunit.utils
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
@@ -10,10 +11,12 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
 import android.os.Build
+import android.provider.Settings as SystemSettings
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -40,6 +43,12 @@ object HomeUiHelper {
     private const val RIPPLE_COLOR_EXTREME = 0x1FFFFFFF
     private const val ACCENT_WASH_ALPHA = 0x29
     private const val PROGRESS_TRACK_ALPHA = 0x40
+    /** One pass of the light across the bar, then a rest while it waits past the end. */
+    private const val SHINE_SWEEP_MS = 1_600L
+    /** How far past the end the light travels, as a share of a pass: the rest between sweeps. */
+    private const val SHINE_REST = 0.35f
+    private const val SHINE_ALPHA_ON_DAY = 0xA6
+    private const val SHINE_ALPHA_AT_NIGHT = 0x8C
     private const val EXTREME_APP_ICON_ALPHA = 0.75f
     private const val EXTREME_CUSTOM_COLOR_DIM = 0.8f
     // Where black text starts to contrast better than white: (L + 0.05) / 0.05 = 1.05 / (L + 0.05).
@@ -463,7 +472,12 @@ object HomeUiHelper {
         detail?.visibility = if (stage != null && !networkLine.isNullOrEmpty()) View.VISIBLE else View.GONE
         val progress = rootView.findViewById<View>(R.id.home_primary_progress)
         progress?.visibility = if (connecting && stage != null) View.VISIBLE else View.GONE
-        if (connecting && stage != null) setProgress(rootView, stage.rank, ConnectionStage.STARTING_PROJECTION.rank)
+        if (connecting && stage != null) {
+            setProgress(rootView, stage.rank, ConnectionStage.STARTING_PROJECTION.rank)
+            startProgressShine(rootView)
+        } else {
+            stopProgressShine(rootView)
+        }
 
         val color = accentColor(settings, decision.primary, palette)
         paintProgress(context, rootView, color, palette)
@@ -691,6 +705,72 @@ object HomeUiHelper {
         val fillColor = if (palette.isDark) color else Color.WHITE
         track.background = rounded(withAlpha(fillColor, PROGRESS_TRACK_ALPHA), radius)
         fill.background = rounded(fillColor, radius)
+        // White would vanish on the day card's white bar, so there the light is the card's color.
+        val shine = if (palette.isDark) withAlpha(Color.WHITE, SHINE_ALPHA_AT_NIGHT) else withAlpha(color, SHINE_ALPHA_ON_DAY)
+        rootView.findViewById<View>(R.id.home_primary_progress_shine)?.background = GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            intArrayOf(Color.TRANSPARENT, shine, Color.TRANSPARENT)
+        )
+    }
+
+    /**
+     * A light that sweeps the done part of the bar over and over, so a step that takes a while
+     * still reads as work going on. Not started when the user turned animations off, and stopped
+     * whenever the bar goes away, so a slow head unit is not redrawing something it does not show.
+     */
+    private fun startProgressShine(rootView: View) {
+        val fill = rootView.findViewById<View>(R.id.home_primary_progress_fill) ?: return
+        val shine = rootView.findViewById<View>(R.id.home_primary_progress_shine) ?: return
+        if (shine.getTag(R.id.home_progress_shine) != null) return
+        if (!animationsEnabled(rootView.context)) {
+            shine.visibility = View.GONE
+            return
+        }
+        shine.visibility = View.VISIBLE
+        val animator = ValueAnimator.ofFloat(0f, 1f + SHINE_REST).apply {
+            duration = (SHINE_SWEEP_MS * (1f + SHINE_REST)).toLong()
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                val travelled = (it.animatedValue as Float).coerceAtMost(1f)
+                // Read every frame: the bar grows with each step while the light runs.
+                shine.translationX = -shine.width + travelled * (fill.width + shine.width)
+            }
+        }
+        val detach = object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {}
+            override fun onViewDetachedFromWindow(v: View) = stopProgressShine(rootView)
+        }
+        shine.setTag(R.id.home_progress_shine, animator)
+        shine.setTag(R.id.home_progress_shine_detach, detach)
+        shine.addOnAttachStateChangeListener(detach)
+        shine.translationX = -shine.layoutParams.width.toFloat()
+        animator.start()
+    }
+
+    /** Ends the sweep, for a bar that is hidden or a home that is no longer on screen. */
+    fun stopProgressShine(rootView: View) {
+        val shine = rootView.findViewById<View>(R.id.home_primary_progress_shine) ?: return
+        (shine.getTag(R.id.home_progress_shine) as? ValueAnimator)?.cancel()
+        (shine.getTag(R.id.home_progress_shine_detach) as? View.OnAttachStateChangeListener)?.let {
+            shine.removeOnAttachStateChangeListener(it)
+        }
+        shine.setTag(R.id.home_progress_shine, null)
+        shine.setTag(R.id.home_progress_shine_detach, null)
+        // Parked before the start, so a cancelled sweep does not leave a light standing mid-bar.
+        shine.translationX = -shine.layoutParams.width.toFloat()
+    }
+
+    /** The developer option and the accessibility one that turns animations off both set this. */
+    private fun animationsEnabled(context: Context): Boolean {
+        val resolver = context.contentResolver
+        val scale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            SystemSettings.Global.getFloat(resolver, SystemSettings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        } else {
+            @Suppress("DEPRECATION")
+            SystemSettings.System.getFloat(resolver, SystemSettings.System.ANIMATOR_DURATION_SCALE, 1f)
+        }
+        return scale > 0f
     }
 
     private fun subtitleRes(decision: Decision): Int = when {

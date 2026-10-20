@@ -1851,6 +1851,8 @@ class HomeFragment : Fragment() {
         super.onStop()
         HomeWidgets.stopListening()
         mainViewModel.homeShowsBringUp.value = false
+        // Started again by the next render, once the home is back on screen.
+        view?.let { HomeUiHelper.stopProgressShine(it) }
     }
 
     override fun onPause() {

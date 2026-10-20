@@ -24,6 +24,8 @@
     <dimen name="home_card_subtitle">18sp</dimen>
     <dimen name="home_cta_height">76dp</dimen>
     <dimen name="home_cta_min_width">300dp</dimen>
+    <!-- The light that sweeps the main button's progress bar while a connection comes up. -->
+    <dimen name="home_progress_shine_width">72dp</dimen>
     <dimen name="home_cta_text">24sp</dimen>
     <dimen name="home_secondary_cta_height">64dp</dimen>
     <dimen name="home_secondary_cta_text">20sp</dimen>

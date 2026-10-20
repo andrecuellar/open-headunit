@@ -111,11 +111,20 @@
             android:importantForAccessibility="no"
             android:visibility="gone">
 
-            <View
+            <!-- A FrameLayout clips its children, so the shine sweeping across it stays inside the
+                 part already done. -->
+            <FrameLayout
                 android:id="@+id/home_primary_progress_fill"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1">
+
+                <View
+                    android:id="@+id/home_primary_progress_shine"
+                    android:layout_width="@dimen/home_progress_shine_width"
+                    android:layout_height="match_parent" />
+
+            </FrameLayout>
 
             <View
                 android:id="@+id/home_primary_progress_rest"

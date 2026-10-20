@@ -7,6 +7,8 @@
     <item name="home_bar_fit" type="id" />
     <item name="home_base_text_size" type="id" />
     <item name="home_tile_name" type="id" />
+    <item name="home_progress_shine" type="id" />
+    <item name="home_progress_shine_detach" type="id" />
     <!-- The favorite apps' own page, on a screen too small for them beside the main button. -->
     <item name="home_page_apps" type="id" />
 </resources>

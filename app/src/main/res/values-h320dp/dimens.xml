@@ -23,6 +23,7 @@
     <dimen name="home_card_subtitle">12sp</dimen>
     <dimen name="home_cta_height">46dp</dimen>
     <dimen name="home_cta_min_width">160dp</dimen>
+    <dimen name="home_progress_shine_width">44dp</dimen>
     <dimen name="home_cta_text">14sp</dimen>
     <dimen name="home_secondary_cta_height">38dp</dimen>
     <dimen name="home_secondary_cta_text">12sp</dimen>
