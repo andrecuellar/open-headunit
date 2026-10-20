@@ -4,9 +4,19 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorFilter
+import android.graphics.LinearGradient
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.PixelFormat
 import android.graphics.PorterDuff
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
@@ -49,6 +59,9 @@ object HomeUiHelper {
     private const val SHINE_REST = 0.35f
     private const val SHINE_ALPHA_ON_DAY = 0xA6
     private const val SHINE_ALPHA_AT_NIGHT = 0x8C
+    private const val TILE_SHINE_ALPHA = 0x59
+    /** The band's width as a share of the tile it crosses. */
+    private const val TILE_SHINE_BAND = 0.7f
     private const val EXTREME_APP_ICON_ALPHA = 0.75f
     private const val EXTREME_CUSTOM_COLOR_DIM = 0.8f
     // Where black text starts to contrast better than white: (L + 0.05) / 0.05 = 1.05 / (L + 0.05).
@@ -319,19 +332,18 @@ object HomeUiHelper {
                 }
                 TileState.CONNECTING -> {
                     val strokePx = dp(context, 2)
-                    paintTile(
-                        tile,
-                        pressable(
-                            palette.ripple,
-                            { shape(palette.tile, radius, color, strokePx) },
-                            { shape(palette.tilePressed, radius, color, strokePx) }
-                        ),
-                        palette.text,
-                        palette.text
+                    val frame = pressable(
+                        palette.ripple,
+                        { shape(palette.tile, radius, color, strokePx) },
+                        { shape(palette.tilePressed, radius, color, strokePx) }
                     )
+                    // The same light as the progress bar, across the whole tile, icon and label included.
+                    val shine = startTileShine(tile, withAlpha(color, TILE_SHINE_ALPHA), radius)
+                    paintTile(tile, if (shine != null) LayerDrawable(arrayOf(frame, shine)) else frame, palette.text, palette.text)
                 }
                 TileState.IDLE -> paintTile(tile, tileBackground(context, palette), palette.text, palette.text)
             }
+            if (state != TileState.CONNECTING) stopTileShine(tile)
         }
 
         val settingsTile = rootView.findViewById<ViewGroup>(R.id.settings_button) ?: return
@@ -746,6 +758,110 @@ object HomeUiHelper {
         shine.addOnAttachStateChangeListener(detach)
         shine.translationX = -shine.layoutParams.width.toFloat()
         animator.start()
+    }
+
+    /**
+     * A diagonal band of light that crosses the tile of the connection on its way, the skeleton
+     * shimmer applied to a tile. Drawn as the tile's top background layer, so the icon and the
+     * label stay on top of it and nothing is added to the layout. Null when animations are off.
+     * The running drawable is kept on the tile, so each render reuses it instead of restarting it.
+     */
+    private fun startTileShine(tile: View, @ColorInt color: Int, radius: Float): Drawable? {
+        (tile.getTag(R.id.home_tile_shine) as? TileShine)?.let { running ->
+            running.color = color
+            return running
+        }
+        if (!animationsEnabled(tile.context)) return null
+        val shine = TileShine(color, radius)
+        val animator = ValueAnimator.ofFloat(0f, 1f + SHINE_REST).apply {
+            duration = (SHINE_SWEEP_MS * (1f + SHINE_REST)).toLong()
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { shine.travelled = (it.animatedValue as Float).coerceAtMost(1f) }
+        }
+        val detach = object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {}
+            override fun onViewDetachedFromWindow(v: View) = stopTileShine(tile)
+        }
+        shine.animator = animator
+        tile.setTag(R.id.home_tile_shine, shine)
+        tile.setTag(R.id.home_tile_shine_detach, detach)
+        tile.addOnAttachStateChangeListener(detach)
+        animator.start()
+        return shine
+    }
+
+    private fun stopTileShine(tile: View) {
+        (tile.getTag(R.id.home_tile_shine) as? TileShine)?.animator?.cancel()
+        (tile.getTag(R.id.home_tile_shine_detach) as? View.OnAttachStateChangeListener)?.let {
+            tile.removeOnAttachStateChangeListener(it)
+        }
+        tile.setTag(R.id.home_tile_shine, null)
+        tile.setTag(R.id.home_tile_shine_detach, null)
+    }
+
+    /**
+     * The band itself: a gradient drawn inside the tile's rounded shape and slid across it. The
+     * shape does the clipping, which a clip path would not do under hardware drawing before API 18.
+     */
+    private class TileShine(@ColorInt color: Int, private val radius: Float) : Drawable() {
+        var animator: ValueAnimator? = null
+        var color: Int = color
+            set(value) {
+                if (field == value) return
+                field = value
+                buildShader(bounds)
+                invalidateSelf()
+            }
+        var travelled = 0f
+            set(value) {
+                field = value
+                invalidateSelf()
+            }
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val slide = Matrix()
+        private val shape = RectF()
+        private var band = 0f
+
+        override fun onBoundsChange(bounds: Rect) = buildShader(bounds)
+
+        private fun buildShader(bounds: Rect) {
+            if (bounds.isEmpty) return
+            band = bounds.width() * TILE_SHINE_BAND
+            // Leaning a little, so it reads as light crossing the tile rather than a sliding stripe.
+            paint.shader = LinearGradient(
+                0f, 0f, band, bounds.height() * 0.35f,
+                intArrayOf(Color.TRANSPARENT, color, Color.TRANSPARENT), null, Shader.TileMode.CLAMP
+            )
+        }
+
+        override fun draw(canvas: Canvas) {
+            val b = bounds
+            if (b.isEmpty || paint.shader == null) return
+            slide.setTranslate(b.left - band + travelled * (b.width() + band), b.top.toFloat())
+            paint.shader.setLocalMatrix(slide)
+            shape.set(b)
+            canvas.drawRoundRect(shape, radius, radius, paint)
+        }
+
+        override fun setAlpha(alpha: Int) {
+            paint.alpha = alpha
+        }
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            paint.colorFilter = colorFilter
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+    }
+
+    /** Ends every sweep on the home, for a home that is no longer on screen. */
+    fun stopShines(rootView: View) {
+        stopProgressShine(rootView)
+        Connection.values().forEach { connection ->
+            rootView.findViewById<View>(tileId(connection))?.let { stopTileShine(it) }
+        }
     }
 
     /** Ends the sweep, for a bar that is hidden or a home that is no longer on screen. */
