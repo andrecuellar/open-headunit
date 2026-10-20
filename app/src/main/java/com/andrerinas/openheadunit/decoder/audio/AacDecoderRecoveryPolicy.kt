@@ -9,8 +9,10 @@ package com.andrerinas.openheadunit.decoder.audio
  */
 object AacDecoderRecoveryPolicy {
 
-    /** Rebuilds allowed per track lifetime. */
+    /** Consecutive rebuilds allowed without a sustained interval of healthy PCM output. */
     const val MAX_REBUILDS = 3
+
+    const val HEALTHY_OUTPUT_MS = 10_000L
 
     /** Minimum spacing between rebuilds. */
     const val MIN_SPACING_MS = 1_000L

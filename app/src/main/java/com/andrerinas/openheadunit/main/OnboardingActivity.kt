@@ -789,7 +789,10 @@ class OnboardingActivity : BaseActivity() {
         } else chosen
         val (pw, ph) = AnnouncedDensityPolicy.orientPanel(m.widthPixels, m.heightPixels, selectedPortrait)
         val (w, h) = AnnouncedDensityPolicy.visibleSize(settings.videoFitMode, pw, ph, r.width, r.height)
-        return AnnouncedDensityPolicy.decide(0, selectedSize, w, h).announced
+        val par = AnnouncedDensityPolicy.pixelAspectE4(
+            settings.videoFitMode, pw, ph, r.width, r.height, settings.pixelAspectRatioE4
+        )
+        return AnnouncedDensityPolicy.decide(0, selectedSize, w, h, par).announced
     }
 
     /** Warn (in red) when the current resolution is higher than the panel: the DPI is computed for

@@ -5,6 +5,7 @@
 #include "libusb.h"
 
 #define LOG_TAG "UsbNative"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
@@ -89,7 +90,11 @@ Java_com_andrerinas_openheadunit_connection_usb_UsbNative_nativeWrite(JNIEnv *en
     
     (*env)->ReleaseByteArrayElements(env, data, buf, JNI_ABORT);
     if (r < 0) {
-        LOGE("libusb_bulk_transfer write failed: %d", r);
+        // A timeout can follow a partial write. Keep the error result: handshake callers
+        // do not all require a full byte count before continuing. Log progress instead of
+        // presenting an incomplete AAP frame as success or resending its prefix here.
+        LOGE("libusb_bulk_transfer write failed: %d, transferred=%d/%d, endpoint=0x%02x, timeout=%dms",
+             r, transferred, length, (unsigned char)endpoint, timeout);
         return r;
     }
     return transferred;
@@ -121,7 +126,14 @@ Java_com_andrerinas_openheadunit_connection_usb_UsbNative_nativeRead(JNIEnv *env
             LOGE("libusb_bulk_transfer read failed: %d", r);
             return r;
         }
-        return 0;
+        // libusb reports bytes already delivered even when the remaining transfer times out.
+        // They belong to the stream and must reach the Kotlin receive buffer exactly once.
+        // Empty polling timeouts are routine; only log when data was preserved.
+        if (transferred > 0) {
+            LOGD("libusb_bulk_transfer read timeout: preserved=%d/%lld, endpoint=0x%02x, timeout=%dms",
+                 transferred, (long long)capacity, (unsigned char)endpoint, timeout);
+        }
+        return transferred;
     }
     return transferred;
 }

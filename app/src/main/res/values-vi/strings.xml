@@ -786,6 +786,9 @@
     <string name="dpi_row_auto_format">Tự động: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, gửi dưới dạng %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto cần vùng hiển thị tối thiểu 748x450 dp, nên %1$d DPI được gửi dưới dạng %2$d.</string>
+    <string name="dpi_clamped_note_portrait">Ở chế độ dọc, Google Maps trên Android Auto bỏ qua thao tác chạm trên vùng hiển thị hẹp hơn 730 dp, nên %1$d DPI được gửi dưới dạng %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI được gửi đúng như đã chọn. Ở chế độ dọc, Google Maps trên Android Auto có thể bỏ qua thao tác chạm khi trên %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI được gửi đúng như đã chọn. Trên %2$d DPI, vùng hiển thị nhỏ hơn 748x450 dp mà Android Auto cần, và có thể hiện bố cục thu gọn.</string>
     <string name="onb_conn_usb_label">USB (hoặc bộ chuyển đổi)</string>
     <string name="onb_connection_self_detail">Chế độ độc lập chạy Android Auto trên thiết bị này mà không cần kết nối điện thoại.</string>
     <string name="connection_kind_all">Tất cả</string>

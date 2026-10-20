@@ -170,6 +170,9 @@
     <string name="dpi_row_auto_format">Otomatis: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, dikirim sebagai %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto membutuhkan kanvas minimal 748x450 dp, sehingga %1$d DPI dikirim sebagai %2$d.</string>
+    <string name="dpi_clamped_note_portrait">Dalam mode potret, Google Maps di Android Auto mengabaikan sentuhan pada kanvas yang lebih sempit dari 730 dp, sehingga %1$d DPI dikirim sebagai %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI dikirim sesuai pilihan. Dalam mode potret, Google Maps di Android Auto dapat mengabaikan sentuhan di atas %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI dikirim sesuai pilihan. Di atas %2$d DPI, kanvas menjadi lebih kecil dari 748x450 dp yang dibutuhkan Android Auto, dan tata letak yang ditampilkan bisa lebih sederhana.</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
 

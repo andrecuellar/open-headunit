@@ -5,6 +5,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MixerOutputLifecycleTest {
+    @Test fun `elapsed drain estimate cannot pause before the final PCM is consumed`() {
+        val lifecycle = MixerOutputLifecycle(false)
+        assertEquals(START, lifecycle.update(0, false, false, true, 40))
+        assertEquals(WRITE, lifecycle.update(100, true, false, true, 40, consumed = false))
+        assertEquals(WRITE, lifecycle.update(1000, true, false, true, 40, consumed = false))
+        assertEquals(PAUSE, lifecycle.update(1010, true, false, true, 40, consumed = true))
+    }
+
     @Test fun `sink setup alone never starts an output`() {
         val lifecycle = MixerOutputLifecycle(false)
         for (now in 0L..5000L step 10) {

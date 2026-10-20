@@ -31,22 +31,25 @@ these status checks:
   and Self launch ownership without a device. Failure fails the unit-test job; the
   `host-connection-diagnostics` artifact includes the log, extracted sources and metadata.
   Gradle alone does not invoke this harness.
-- **`github` flavor only.** The `playstore` flavor is not built because it
-  cannot currently compile: `VpnControl.kt` lives only in the `github` source
-  set (`app/src/github/...`) but is imported by shared `main` code. Once that
-  split is resolved, add a `playstore` build to the `build` job.
+- **`github` flavor only.** CI builds the `github` flavor. The `playstore`
+  flavor also builds (`./gradlew :app:assemblePlaystoreDebug`); it is simply
+  not part of the CI job yet.
 - **`main` may show red** on `Build`/`Unit tests` until the known
   `SettingsFragment.kt:767` smart-cast compile error (issue #659) is fixed.
   This is expected, not a CI misconfiguration.
-- **No lint job (yet).** Android Lint is intentionally not run in CI:
-  `:app:lintAnalyzeGithubDebug` hangs for many minutes on GitHub-hosted runners
-  and produces no report (likely choking on the large generated protobuf
-  sources). Run it locally instead — `./gradlew :app:lintGithubDebug` — and
-  note that the project sets `lint { abortOnError = false }`, so lint findings
-  are advisory by design. Re-adding a CI lint job is worthwhile once the hang
-  is diagnosed.
-- **Toolchain:** Temurin JDK 21 (Gradle 8.13 rejects Java 24+), plus the pinned
-  NDK `27.0.12077973` and CMake `3.22.1` installed via `sdkmanager`. The
+- **No lint job (yet).** Android Lint is not run in CI. The long hang in
+  `:app:lintAnalyzeGithubDebug` was not the generated protobuf sources: it was
+  `androidx.fragment`'s `UnsafeFragmentLifecycleObserverDetector` (the detector
+  behind `FragmentLiveDataObserve`, `FragmentBackPressedCallback` and
+  `FragmentAddMenuProvider`), which walks `HomeFragment`'s call graph with no
+  depth limit in the fragment version this module can use. Those three checks
+  are disabled in `app/build.gradle.kts` while the app keeps minSdk 16, since
+  the first fragment release with the cap (1.9.0) needs minSdk 23. Run lint
+  locally with `./gradlew :app:lintGithubDebug`; the project sets
+  `lint { abortOnError = false }`, so findings are advisory by design. A CI
+  lint job can be added now that the run is fast again.
+- **Toolchain:** Temurin JDK 21, plus the pinned NDK `29.0.14206865` and
+  CMake `3.22.1` installed via `sdkmanager`. The
   `sdkmanager` install is retried up to three times because its downloads
   occasionally arrive corrupt on GitHub-hosted runners.
 - **Action pinning:** all actions (GitHub first-party and third-party alike)

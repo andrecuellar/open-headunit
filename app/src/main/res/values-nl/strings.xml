@@ -780,6 +780,9 @@
     <string name="dpi_row_auto_format">Automatisch: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, verzonden als %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto heeft een canvas van minstens 748x450 dp nodig, dus %1$d DPI wordt verzonden als %2$d.</string>
+    <string name="dpi_clamped_note_portrait">In staand formaat negeert Google Maps in Android Auto aanraking op een canvas smaller dan 730 dp, dus %1$d DPI wordt verzonden als %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI wordt verzonden zoals gekozen. In staand formaat kan Google Maps in Android Auto aanraking negeren boven %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI wordt verzonden zoals gekozen. Boven %2$d DPI is het canvas kleiner dan de 748x450 dp die Android Auto nodig heeft en kan een beperkte indeling verschijnen.</string>
     <string name="onb_conn_usb_label">USB (of adapter)</string>
     <string name="onb_connection_self_detail">De zelfstandige modus draait Android Auto op dit apparaat zonder telefoon.</string>
     <string name="connection_kind_all">Alle</string>

@@ -34,13 +34,15 @@ internal fun pcmEndingRegression() {
         check(!mixer.isQuiescent(state, SystemClock.elapsedRealtime() + 10_000))
         resume.countDown()
         val deadline = System.nanoTime() + 3_000_000_000L
-        while (track.samples.size < 1920 || state.writePending) {
+        // Idle silence can start another write between separate assertions. Wait for
+        // one quiescent observation rather than assuming writePending stays false.
+        while (track.samples.size < 1920 || state.writePending || !state.outputConsumed ||
+            !mixer.isQuiescent(state, SystemClock.elapsedRealtime() + 10_000)) {
             check(System.nanoTime() < deadline) { "mixer did not write the final ramp" }
             Thread.sleep(2)
         }
         check(track.samples[960].toInt() == 995)
         check(track.samples[1438].toInt() == 0)
-        check(mixer.isQuiescent(state, SystemClock.elapsedRealtime() + 10_000))
     } finally {
         resume.countDown()
         mixer.stop()

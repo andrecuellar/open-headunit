@@ -72,16 +72,23 @@ internal class AapMessageHandlerType(
         }
 
         // 2. Try processing as Audio stream (Speech, System, Media)
-        if (message.isAudio) {
-            if (aapAudio.process(message)) {
-                // After process returns normally, return one DATA credit, including a safely rejected
-                // payload. Do not wait for speaker drain: that would stall the sender's window.
-                // CSD has no DATA credit to return; fragments were completed before dispatch.
+        if (message.isAudio && AudioMediaPayload.isMedia(msgType)) {
+            val sessionId = transport.getSessionId(message.channel)
+            try {
+                aapAudio.process(message)
+            } finally {
+                // A complete DATA owns one credit even if PCM conversion/decoder handoff
+                // rejects it. The reader catches processing exceptions and continues, so
+                // returning only on success would leave that credit outstanding at the phone.
+                // Android Auto 17.6/17.8 acquire permits for DATA, not CSD, and their timeout
+                // recovery does not make a missing ACK harmless: it can delay later audio.
+                // Reassembly drops never reach this dispatch; they use onDroppedMediaData.
+                // ACK retires receipt, not speaker playback. Keep the receiving session id.
                 if (AudioMediaPayload.requiresAck(msgType)) {
-                    transport.sendMediaAck(message.channel)
+                    transport.sendMediaAck(message.channel, sessionId)
                 }
-                return
             }
+            return
         }
 
         // 3. Media Playback Status (separate channel)

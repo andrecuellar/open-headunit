@@ -824,6 +824,9 @@
     <string name="dpi_row_auto_format">Automatisch: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, gesendet als %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto braucht eine Fläche von mindestens 748x450 dp. Deshalb werden %1$d DPI als %2$d gesendet.</string>
+    <string name="dpi_clamped_note_portrait">Im Hochformat ignoriert Google Maps in Android Auto Berührungen auf einer Fläche, die schmaler als 730 dp ist. Deshalb werden %1$d DPI als %2$d gesendet.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI werden wie gewählt gesendet. Im Hochformat kann Google Maps in Android Auto Berührungen ab mehr als %2$d DPI ignorieren.</string>
+    <string name="dpi_floor_override_note">%1$d DPI werden wie gewählt gesendet. Über %2$d DPI ist die Fläche kleiner als die 748x450 dp, die Android Auto braucht, und es kann ein reduziertes Layout erscheinen.</string>
     <string name="onb_conn_usb_label">USB (oder Adapter)</string>
     <string name="onb_connection_self_detail">Der autonome Modus führt Android Auto auf diesem Gerät ohne verbundenes Telefon aus.</string>
     <string name="connection_kind_all">Alle</string>

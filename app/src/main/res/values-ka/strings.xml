@@ -713,6 +713,9 @@
     <string name="dpi_row_auto_format">ავტო: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, იგზავნება როგორც %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto-ს სჭირდება მინიმუმ 748x450 dp ტილო, ამიტომ %1$d DPI იგზავნება როგორც %2$d.</string>
+    <string name="dpi_clamped_note_portrait">პორტრეტულ რეჟიმში Android Auto-ში Google Maps უგულებელყოფს შეხებას 730 dp-ზე ვიწრო ტილოზე, ამიტომ %1$d DPI იგზავნება როგორც %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI იგზავნება არჩეული მნიშვნელობით. პორტრეტულ რეჟიმში Android Auto-ში Google Maps-მა შეიძლება უგულებელყოს შეხება %2$d DPI-ზე მეტის დროს.</string>
+    <string name="dpi_floor_override_note">%1$d DPI იგზავნება არჩეული მნიშვნელობით. %2$d DPI-ზე მეტის დროს ტილო Android Auto-სთვის საჭირო 748x450 dp-ზე პატარაა და შეიძლება შემცირებული განლაგება გამოჩნდეს.</string>
     <string name="onb_conn_usb_label">USB (ან ადაპტერი)</string>
     <string name="onb_connection_self_detail">ავტონომიური რეჟიმი უშვებს Android Auto-ს ამ მოწყობილობაზე ტელეფონის დაკავშირების გარეშე.</string>
     <string name="connection_kind_all">ყველა</string>

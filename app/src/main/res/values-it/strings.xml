@@ -787,6 +787,9 @@
     <string name="dpi_row_auto_format">Automatico: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, inviato come %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto richiede un\'area di almeno 748x450 dp, quindi %1$d DPI viene inviato come %2$d.</string>
+    <string name="dpi_clamped_note_portrait">In verticale, Google Maps su Android Auto ignora il tocco su un\'area più stretta di 730 dp, quindi %1$d DPI viene inviato come %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI viene inviato come scelto. In verticale, Google Maps su Android Auto può ignorare il tocco oltre %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI viene inviato come scelto. Oltre %2$d DPI l\'area è più piccola dei 748x450 dp richiesti da Android Auto e può comparire un layout ridotto.</string>
     <string name="onb_conn_usb_label">USB (o adattatore)</string>
     <string name="onb_connection_self_detail">La modalità autonoma esegue Android Auto su questo dispositivo senza collegare un telefono.</string>
     <string name="connection_kind_all">Tutti</string>

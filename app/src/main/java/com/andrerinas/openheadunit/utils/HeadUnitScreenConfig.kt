@@ -704,7 +704,8 @@ object HeadUnitScreenConfig {
         )
         return AnnouncedDensityPolicy.decide(
             currentSettings.dpiPixelDensity, preset,
-            getNegotiatedWidth() - getWidthMargin(), getNegotiatedHeight() - getHeightMargin()
+            getNegotiatedWidth() - getWidthMargin(), getNegotiatedHeight() - getHeightMargin(),
+            getPixelAspectRatioE4(), currentSettings.dpiFloorOverride
         )
     }
 

@@ -59,10 +59,64 @@ class AnnouncedDensityPolicyTest {
     }
 
     @Test
-    fun `portrait is not clamped`() {
+    fun `portrait is clamped to the narrow layout's width`() {
         val d = AnnouncedDensityPolicy.decide(240, small, 480, 800)
-        assertEquals(240, d.announced)
+        assertEquals(105, d.announced)
+        assertEquals(Reason.PORTRAIT_FLOOR, d.reason)
+    }
+
+    @Test
+    fun `the rig's portrait edge on an 800 px panel with a 720 px codec`() {
+        // Measured: Maps took touch at 175 (phone w731) and none at 176 (w727) with PAR 11111.
+        assertEquals(800 to 1280, AnnouncedDensityPolicy.phoneCanvas(720, 1280, 11111))
+        val kept = AnnouncedDensityPolicy.decide(175, small, 720, 1280, 11111)
+        assertEquals(175, kept.announced)
+        assertEquals(Reason.PORTRAIT, kept.reason)
+        for (v in intArrayOf(176, 190, 198)) {
+            val d = AnnouncedDensityPolicy.decide(v, small, 720, 1280, 11111)
+            assertEquals(175, d.announced)
+            assertEquals(Reason.PORTRAIT_FLOOR, d.reason)
+        }
+    }
+
+    @Test
+    fun `square pixels lower the portrait edge`() {
+        // Measured: 175 failed and 157 worked with PAR 10001 (phone w658 and w734).
+        assertEquals(157, AnnouncedDensityPolicy.decide(175, small, 720, 1280, 10001).announced)
+        assertEquals(157, AnnouncedDensityPolicy.decide(157, small, 720, 1280, 10001).announced)
+    }
+
+    @Test
+    fun `automatic portrait stays under the edge`() {
+        val d = AnnouncedDensityPolicy.decide(0, small, 720, 1280)
+        assertEquals(157, d.announced)
         assertEquals(Reason.PORTRAIT, d.reason)
+    }
+
+    @Test
+    fun `the portrait boundary is exact`() {
+        for (w in listOf(720, 800, 1080)) {
+            val n = AnnouncedDensityPolicy.portraitMaxDpi(w)
+            assertTrue("$w at $n", AnnouncedDensityPolicy.canvasDp(w, n) >= 730)
+            assertTrue("$w at ${n + 1}", AnnouncedDensityPolicy.canvasDp(w, n + 1) < 730)
+        }
+    }
+
+    @Test
+    fun `the phone canvas grows on the stretched axis only`() {
+        assertEquals(1280 to 720, AnnouncedDensityPolicy.phoneCanvas(1280, 720, 10000))
+        assertEquals(1280 to 720, AnnouncedDensityPolicy.phoneCanvas(1280, 720, 0))
+        // Measured in landscape on the same rig: contentArea 1280x800 for a 1280x720 codec.
+        assertEquals(1280 to 800, AnnouncedDensityPolicy.phoneCanvas(1280, 720, 9000))
+    }
+
+    @Test
+    fun `the preview aspect ratio follows the manual override`() {
+        assertEquals(10001, AnnouncedDensityPolicy.pixelAspectE4(Settings.VideoFitMode.FILL, 800, 1280, 1280, 720, 10001))
+        val derived = AnnouncedDensityPolicy.pixelAspectE4(Settings.VideoFitMode.FILL, 800, 1280, 1280, 720, 10000)
+        assertEquals(
+            ProjectionGeometryPolicy.pixelAspectRatioE4(Settings.VideoFitMode.FILL, 800, 1280, 720, 1280, 0, 0), derived
+        )
     }
 
     @Test
@@ -119,6 +173,50 @@ class AnnouncedDensityPolicyTest {
         assertEquals(
             "150 (dp canvas 853x512, requested automatic, codec-based)",
             AnnouncedDensityPolicy.describe(AnnouncedDensityPolicy.decide(0, small, 800, 480), 800, 480)
+        )
+        assertEquals(
+            "175 (dp canvas 731x1170, requested 198, clamped to the 730 dp portrait width floor)",
+            AnnouncedDensityPolicy.describe(AnnouncedDensityPolicy.decide(198, small, 720, 1280, 11111), 720, 1280, 11111)
+        )
+        assertEquals(
+            "198 (dp canvas 646x1034, requested 198, the 730 dp portrait width floor overridden)",
+            AnnouncedDensityPolicy.describe(
+                AnnouncedDensityPolicy.decide(198, small, 720, 1280, 11111, floorOverride = true), 720, 1280, 11111
+            )
+        )
+    }
+
+    @Test
+    fun `the override sends a stored portrait value above the floor`() {
+        val d = AnnouncedDensityPolicy.decide(198, small, 720, 1280, 11111, floorOverride = true)
+        assertEquals(AnnouncedDensityPolicy.Decision(198, 198, Reason.FLOOR_OVERRIDE), d)
+    }
+
+    @Test
+    fun `the override leaves a value under the floor and Automatic alone`() {
+        assertEquals(
+            AnnouncedDensityPolicy.Decision(160, 160, Reason.PORTRAIT),
+            AnnouncedDensityPolicy.decide(160, small, 720, 1280, 11111, floorOverride = true)
+        )
+        assertEquals(
+            AnnouncedDensityPolicy.decide(0, small, 720, 1280, 11111),
+            AnnouncedDensityPolicy.decide(0, small, 720, 1280, 11111, floorOverride = true)
+        )
+    }
+
+    @Test
+    fun `the override sends a stored landscape value above the HUIG floor`() {
+        assertEquals(
+            AnnouncedDensityPolicy.Decision(171, 171, Reason.FLOOR_OVERRIDE),
+            AnnouncedDensityPolicy.decide(171, small, 800, 480, floorOverride = true)
+        )
+        assertEquals(
+            "171 (dp canvas 748x449, requested 171, the 748x450 dp HUIG floor overridden)",
+            AnnouncedDensityPolicy.describe(AnnouncedDensityPolicy.decide(171, small, 800, 480, floorOverride = true), 800, 480)
+        )
+        assertEquals(
+            AnnouncedDensityPolicy.decide(0, small, 800, 480),
+            AnnouncedDensityPolicy.decide(0, small, 800, 480, floorOverride = true)
         )
     }
 

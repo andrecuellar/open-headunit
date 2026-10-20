@@ -777,6 +777,9 @@
     <string name="dpi_row_auto_format">Otomatik: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, %2$d olarak gönderilir (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto en az 748x450 dp alan gerektirir, bu yüzden %1$d DPI değeri %2$d olarak gönderilir.</string>
+    <string name="dpi_clamped_note_portrait">Dikey modda Android Auto\'daki Google Maps, 730 dp\'den dar alanda dokunmayı yok sayar, bu yüzden %1$d DPI değeri %2$d olarak gönderilir.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI değeri seçildiği gibi gönderilir. Dikey modda Android Auto\'daki Google Maps, %2$d DPI üzerinde dokunmayı yok sayabilir.</string>
+    <string name="dpi_floor_override_note">%1$d DPI değeri seçildiği gibi gönderilir. %2$d DPI üzerinde alan, Android Auto\'nun gerektirdiği 748x450 dp\'den küçük olur ve düzen küçültülmüş görünebilir.</string>
     <string name="onb_conn_usb_label">USB (veya adaptör)</string>
     <string name="onb_connection_self_detail">Bağımsız mod, telefon bağlamadan Android Auto uygulamasını bu cihazda çalıştırır.</string>
     <string name="connection_kind_all">Tümü</string>

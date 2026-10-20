@@ -9,12 +9,55 @@ internal class AacDecoderRecovery {
     @Volatile var attempts = 0
         private set
     private var lastAttemptMs = 0L
+    private var healthyOutputUs = 0L
+    private var healthySinceMs = -1L
+    private var lastHealthyMs = -1L
     private var exhausted = false
     @Synchronized fun isExhausted(): Boolean = exhausted
     private var playbackVersion = 0L
     private var attemptedPlaybackVersion = 0L
 
-    @Synchronized fun request() { if (!exhausted) pending = true }
+    @Synchronized fun request() {
+        clearProgress()
+        if (!exhausted) pending = true
+    }
+
+    /** Count PCM accepted by the mixer, not input AUs, configure success or wire timestamps.
+     * AA can reuse its AAC encoder across Stop/Start and several DATA packets can carry the
+     * same capture timestamp. Neither is a healthy decoder lifetime boundary. A long track
+     * may therefore recover from separate faults without ever receiving another Start.
+     *
+     * Require ten seconds of decoded audio AND elapsed time with no long output gap: a burst
+     * draining old input, or an occasional successful buffer between failures, cannot rearm
+     * a broken decoder. The caller must exclude output from a retired codec under its lock.
+     * Return true only at renewal so the caller can log that edge without periodic noise.
+     */
+    @Synchronized fun decodedPcm(frames: Int, sampleRate: Int, nowMs: Long): Boolean {
+        if (attempts == 0 || pending || exhausted || frames <= 0 || sampleRate <= 0) return false
+        if (lastHealthyMs < 0 || nowMs < lastHealthyMs || nowMs - lastHealthyMs > 1000) {
+            clearProgress()
+            healthySinceMs = nowMs
+        }
+        lastHealthyMs = nowMs
+        healthyOutputUs = minOf(AacDecoderRecoveryPolicy.HEALTHY_OUTPUT_MS * 1000,
+            healthyOutputUs + frames.toLong() * 1_000_000 / sampleRate)
+        if (healthyOutputUs >= AacDecoderRecoveryPolicy.HEALTHY_OUTPUT_MS * 1000 &&
+            nowMs - healthySinceMs >= AacDecoderRecoveryPolicy.HEALTHY_OUTPUT_MS) {
+            resetBudget()
+            return true
+        }
+        return false
+    }
+
+    /** Retirement can race output after next() consumed a rebuild request. Do not let that
+     * last old-codec buffer seed the replacement's healthy-output window. */
+    @Synchronized fun codecRetired() { clearProgress() }
+
+    private fun clearProgress() {
+        healthyOutputUs = 0
+        healthySinceMs = -1
+        lastHealthyMs = -1
+    }
 
     /** Remember Start even if it races the final failed rebuild, before STOP is consumed. */
     @Synchronized fun retryIfExhausted() {
@@ -51,6 +94,7 @@ internal class AacDecoderRecovery {
     }
 
     private fun resetBudget() {
+        clearProgress()
         attempts = 0
         lastAttemptMs = 0
         exhausted = false

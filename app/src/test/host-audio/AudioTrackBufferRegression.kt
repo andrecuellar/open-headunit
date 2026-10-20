@@ -13,7 +13,7 @@ internal fun audioTrackBufferRegression() {
         AudioTrack.minimumQueries = 0
     }
     try {
-        for (api in listOf(16, 19, 21, 23, 24, 26, 27, 28, 31, 34, 35, 36, 37)) {
+        for (api in (16..37)) {
             Build.VERSION.SDK_INT = api
             for (bytes in listOf(768, 3840, 7688, 13372, 23712, 76804, 120000)) {
                 reset()
@@ -43,6 +43,109 @@ internal fun audioTrackBufferRegression() {
             }
         }
         println("PASS AudioTrack platform floors across API16..37, device sizes, tuning and direct requests")
+        for (api in 16..37) {
+            Build.VERSION.SDK_INT = api
+            reset()
+            AudioTrack.initialGrantFrames = 4800
+            val output = AudioTrackPcmOutput(3, false)
+            val track = AudioTrack.created.last()
+            track.advancePlayback = false
+            try {
+                check(output.capacityFrames == track.bufferCapacityInFrames)
+                check(output.bufferFrames == track.bufferSizeInFrames)
+                output.start()
+                val pcm = ShortArray(output.bufferFrames * 2) { 100 }
+                var offset = 0
+                while (offset < pcm.size) {
+                    val n = output.write(pcm, offset, pcm.size - offset)
+                    check(n > 0)
+                    offset += n
+                }
+                check(output.playedFrames() == 0L)
+                check(output.writtenFrames == pcm.size / 2L)
+                if (api < 21) {
+                    val calls = track.writeCalls
+                    check(output.write(pcm, 0, 960) == 0)
+                    check(track.writeCalls == calls) { "API $api entered blocking write on a full track" }
+                    track.playbackHeadPosition = 120
+                    check(output.write(pcm, 0, 960) == 240)
+                }
+                track.playbackHeadPosition = track.acceptedFrames
+                val drained = output.playedFrames()
+                output.pause()
+                if (api <= 18) {
+                    check(output.writtenFrames == drained && output.playedFrames() == drained)
+                    check(track.flushCalls == 0)
+                } else check(output.writtenFrames == 0L && output.playedFrames() == 0L)
+                output.start()
+                check(output.write(pcm, 0, 960) == 960)
+            } finally { output.close() }
+        }
+        println("PASS API16..37 actual allocation, delayed playback and flush reset; pre21 full tracks never enter native write")
+
+        for (api in 21..22) {
+            Build.VERSION.SDK_INT = api
+            reset()
+            val lollipop = AudioTrackPcmOutput(3, false)
+            val raw = AudioTrack.created.last()
+            try {
+                lollipop.start()
+                val data = shortArrayOf(99, 99, 1, -2, 32767, -32768, 5, 6)
+                raw.byteReplies.addAll(listOf(4, 0, -6, -2, 8))
+                check(lollipop.write(data, 2, 6) == 2)
+                check(lollipop.write(data, 4, 4) == 0)
+                check(lollipop.write(data, 4, 4) == -6)
+                check(lollipop.write(data, 4, 4) == -6) // raw native -2 is a recoverable device error
+                check(lollipop.write(data, 4, 4) == 4)
+                check(raw.samples.toList() == data.drop(2))
+                check(lollipop.writtenFrames == 3L && lollipop.playedFrames() == 3L)
+                check(raw.writeCalls == 0 && raw.byteBufferWriteCalls == 5)
+                check(raw.lastWriteMode == AudioTrack.WRITE_NON_BLOCKING)
+            } finally { lollipop.close() }
+        }
+        println("PASS Lollipop direct nonblocking writes preserve offsets, native PCM order, partial bytes and errors")
+
+        for (api in 16..37) {
+            Build.VERSION.SDK_INT = api
+            reset()
+            val first = AudioTrackPcmOutput(3, false)
+            val raw = AudioTrack.created.last()
+            var reopens = 0
+            val recovery = RecoveringPcmOutput(first, {
+                reopens++
+                AudioTrackPcmOutput(3, false)
+            }, { 0L }, {})
+            try {
+                recovery.start()
+                val data = shortArrayOf(1, 2, 3, 4)
+                check(recovery.write(data, 0, 4) == 4)
+                check(recovery.playedFrames() == 2L)
+                if (api <= 18) {
+                    raw.deferFlush = true
+                    recovery.pause()
+                    recovery.start()
+                    check(recovery.write(data, 0, 4) == 4)
+                    check(raw.flushCalls == 0 && reopens == 0)
+                }
+                // Simulate native restore's injected silence / an unrelated HAL head.
+                raw.playbackHeadPosition += 4800
+                check(recovery.playedFrames() == -1L)
+                // Legacy admission must reach recovery, not mistake an invalid head for the
+                // modern backend's time-only fallback and pause before the next write.
+                if (api < 21) check(recovery.writtenFrames >= 0)
+                val result = recovery.write(data, 0, 4)
+                if (api < 21) {
+                    check(result == 0 && reopens == 1 && raw.closed)
+                    check(recovery.write(data, 0, 4) == 4)
+                    check(AudioTrack.created.last().samples.toList() == data.toList())
+                } else {
+                    check(result == 4 && reopens == 0 && !raw.closed)
+                    check(recovery.writtenFrames == -1L && recovery.playedFrames() == -1L)
+                }
+            } finally { recovery.close() }
+        }
+        println("PASS legacy quick resume keeps counters; legacy restore reopens, nonblocking backends keep playing with unknown head")
+
 
         Build.VERSION.SDK_INT = 33
         reset()

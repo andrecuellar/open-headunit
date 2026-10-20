@@ -782,6 +782,9 @@
     <string name="dpi_row_auto_format">Авто: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, надсилається як %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto потрібне полотно не менше 748x450 dp, тому %1$d DPI надсилається як %2$d.</string>
+    <string name="dpi_clamped_note_portrait">У портретному режимі Google Maps в Android Auto ігнорує дотики на полотні вужчому за 730 dp, тому %1$d DPI надсилається як %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI надсилається як вибрано. У портретному режимі Google Maps в Android Auto може ігнорувати дотики вище %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI надсилається як вибрано. Вище %2$d DPI полотно менше за 748x450 dp, потрібні Android Auto, і може з\'явитися спрощений макет.</string>
     <string name="onb_conn_usb_label">USB (або адаптер)</string>
     <string name="onb_connection_self_detail">Автономний режим запускає Android Auto на цьому пристрої без телефона.</string>
     <string name="connection_kind_all">Усі</string>

@@ -778,6 +778,9 @@
     <string name="dpi_row_auto_format">自动: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, 发送为 %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto 需要至少 748x450 dp 的画布，因此 %1$d DPI 会作为 %2$d 发送。</string>
+    <string name="dpi_clamped_note_portrait">竖屏时，Android Auto 中的 Google Maps 会忽略宽度小于 730 dp 的画布上的触控，因此 %1$d DPI 会作为 %2$d 发送。</string>
+    <string name="dpi_portrait_override_note">%1$d DPI 会按所选值发送。竖屏时，超过 %2$d DPI 后，Android Auto 中的 Google Maps 可能会忽略触控。</string>
+    <string name="dpi_floor_override_note">%1$d DPI 会按所选值发送。超过 %2$d DPI 后，画布会小于 Android Auto 所需的 748x450 dp，可能会显示精简布局。</string>
     <string name="onb_conn_usb_label">USB（或转接器）</string>
     <string name="onb_connection_self_detail">自主模式在本设备上执行 Android Auto，不需连接手机。</string>
     <string name="connection_kind_all">全部</string>

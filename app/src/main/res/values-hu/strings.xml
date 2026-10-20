@@ -779,6 +779,9 @@
     <string name="dpi_row_auto_format">Automatikus: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, elküldve mint %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Az Android Autónak legalább 748x450 dp-s vászon kell, ezért a(z) %1$d DPI helyett %2$d megy ki.</string>
+    <string name="dpi_clamped_note_portrait">Álló tájolásban a Google Maps az Android Autóban figyelmen kívül hagyja az érintést a 730 dp-nél keskenyebb vásznon, ezért a(z) %1$d DPI helyett %2$d megy ki.</string>
+    <string name="dpi_portrait_override_note">A(z) %1$d DPI a választott értékkel megy ki. Álló tájolásban a Google Maps az Android Autóban %2$d DPI fölött figyelmen kívül hagyhatja az érintést.</string>
+    <string name="dpi_floor_override_note">A(z) %1$d DPI a választott értékkel megy ki. %2$d DPI fölött a vászon kisebb, mint az Android Autónak szükséges 748x450 dp, és csökkentett elrendezés jelenhet meg.</string>
     <string name="onb_conn_usb_label">USB (vagy adapter)</string>
     <string name="onb_connection_self_detail">Az önálló mód telefon csatlakoztatása nélkül futtatja az Android Autót ezen az eszközön.</string>
     <string name="connection_kind_all">Összes</string>

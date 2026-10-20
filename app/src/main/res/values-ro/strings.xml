@@ -781,6 +781,9 @@
     <string name="dpi_row_auto_format">Automat: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, trimis ca %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto necesită o suprafață de cel puțin 748x450 dp, așa că %1$d DPI se trimite ca %2$d.</string>
+    <string name="dpi_clamped_note_portrait">În modul portret, Google Maps din Android Auto ignoră atingerea pe o suprafață mai îngustă de 730 dp, așa că %1$d DPI se trimite ca %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI se trimite așa cum a fost ales. În modul portret, Google Maps din Android Auto poate ignora atingerea peste %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI se trimite așa cum a fost ales. Peste %2$d DPI suprafața este mai mică decât cei 748x450 dp de care are nevoie Android Auto și poate apărea o aranjare redusă.</string>
     <string name="onb_conn_usb_label">USB (sau adaptor)</string>
     <string name="onb_connection_self_detail">Modul autonom rulează Android Auto pe acest dispozitiv fără a conecta un telefon.</string>
     <string name="connection_kind_all">Toate</string>

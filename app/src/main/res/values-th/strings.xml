@@ -170,6 +170,9 @@
     <string name="dpi_row_auto_format">อัตโนมัติ: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, ส่งเป็น %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto ต้องการพื้นที่อย่างน้อย 748x450 dp จึงส่ง %1$d DPI เป็น %2$d</string>
+    <string name="dpi_clamped_note_portrait">ในแนวตั้ง Google Maps บน Android Auto จะไม่รับการสัมผัสบนพื้นที่ที่แคบกว่า 730 dp จึงส่ง %1$d DPI เป็น %2$d</string>
+    <string name="dpi_portrait_override_note">ส่ง %1$d DPI ตามที่เลือก ในแนวตั้ง Google Maps บน Android Auto อาจไม่รับการสัมผัสเมื่อเกิน %2$d DPI</string>
+    <string name="dpi_floor_override_note">ส่ง %1$d DPI ตามที่เลือก เมื่อเกิน %2$d DPI พื้นที่จะเล็กกว่า 748x450 dp ที่ Android Auto ต้องการ และอาจแสดงเลย์เอาต์แบบลดขนาด</string>
     <string name="dpi_value_format">%1$d DPI</string>
     <string name="dpi_input_hint">DPI</string>
 

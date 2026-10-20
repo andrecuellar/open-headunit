@@ -178,9 +178,16 @@ class AudioTrackWrapper(
                             synchronized(codecOutputLock) {
                                 if (isRunning && decoder === codec && formatState.acceptsOutput) {
                                     writeToMixer(chunk, size, capturedFormat)
+                                    noteHealthyOutput(size, capturedFormat)
                                 }
                             }
                         } catch (e: Exception) {
+                            synchronized(codecOutputLock) {
+                                // A copied buffer is not necessarily usable PCM. Match the sync
+                                // pump's bounded recovery when conversion/handoff rejects output;
+                                // the copy watchdog alone would otherwise see endless progress.
+                                if (isRunning && decoder === codec) aacRecovery.request()
+                            }
                             AppLog.e("Error feeding decoded AAC to mixer", e)
                         } finally {
                             recycleAudioBuffer(chunk)
@@ -264,6 +271,7 @@ class AudioTrackWrapper(
         val oldDecoder = synchronized(codecOutputLock) {
             decoder.also {
                 decoder = null
+                aacRecovery.codecRetired()
                 progressWatchdog.reset()
                 mixer.resetConverter(mixerChannel)
             }
@@ -325,6 +333,16 @@ class AudioTrackWrapper(
         (aacRecovery.isExhausted() || synchronized(dataQueue) { !submitInFlight && dataQueue.isEmpty() }) &&
         (!isAac || nowMs - maxOf(stopReceivedMs, lastPcmActivityMs, lastOutputCopiedMs) >= 1000) &&
         mixer.isQuiescent(mixerChannel, nowMs) && !handoffInFlight && inputClosed
+
+    // Call only after a successful PCM handoff, with codec ownership still protected.
+    // Output format (including float PCM) determines frames; AAC input count does not.
+    private fun noteHealthyOutput(size: Int, format: PcmInputFormat) {
+        val now = SystemClock.elapsedRealtime()
+        if (aacRecovery.decodedPcm(size / format.bytesPerFrame, format.sampleRate, now)) {
+            AudioDiagnostics.report(now,
+                "AAC channel=$channelId retry budget renewed after sustained PCM output")
+        }
+    }
 
     private fun noteOutputCopied(source: MediaCodec, ptsUs: Long) {
         val copiedMs = SystemClock.elapsedRealtime()
@@ -478,7 +496,14 @@ class AudioTrackWrapper(
                                 // Free codec capacity before PCM output can block on a slow HAL.
                                 dec.releaseOutputBuffer(index, false)
                             }
-                            pcm?.let { writeToMixer(it, size, format) }
+                            pcm?.let {
+                                synchronized(codecOutputLock) {
+                                    if (isRunning && decoder === dec && outputFormatState.acceptsOutput && format != null) {
+                                        writeToMixer(it, size, format)
+                                        noteHealthyOutput(size, format)
+                                    }
+                                }
+                            }
                         } finally {
                             pcm?.let { recycleAudioBuffer(it) }
                         }

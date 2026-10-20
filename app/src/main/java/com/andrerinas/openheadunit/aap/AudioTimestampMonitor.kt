@@ -76,14 +76,27 @@ internal class AudioTimestampMonitor(private val windowUs: Long = 10_000_000L) {
         previousArrivalUs = arrivalUs
         previousDurationUs = durationUs
         if (arrivalUs - windowStartUs < windowUs) return null
-        val report = Report(packets, comparablePairs, durationChanges, missingTimestamps, discontinuities,
-            maxSourceGapUs, maxArrivalGapUs, maxSourceExcessUs, maxArrivalExcessUs, maxDeliveryIncreaseUs,
-            if (maxArrivalExcessUs >= 20_000L) ArrivalSpike(spikeArrivalUs, spikeArrivalGapUs,
-                spikeSourceGapUs.takeIf { it >= 0 }, spikePreviousDurationUs, spikeDurationUs) else null)
+        val report = snapshot()
         clearWindow()
         windowStartUs = arrivalUs
         return report
     }
+
+    /** End a protocol segment without losing prompts shorter than the periodic window.
+     * Do not compare across Stop/Start: the silence between prompts is not delivery jitter.
+     * An already reported window produces no duplicate, including repeated Stop messages.
+     */
+    @Synchronized
+    fun finish(): Report? {
+        val report = if (packets > 0) snapshot() else null
+        reset()
+        return report
+    }
+
+    private fun snapshot() = Report(packets, comparablePairs, durationChanges, missingTimestamps, discontinuities,
+        maxSourceGapUs, maxArrivalGapUs, maxSourceExcessUs, maxArrivalExcessUs, maxDeliveryIncreaseUs,
+        if (maxArrivalExcessUs >= 20_000L) ArrivalSpike(spikeArrivalUs, spikeArrivalGapUs,
+            spikeSourceGapUs.takeIf { it >= 0 }, spikePreviousDurationUs, spikeDurationUs) else null)
 
     @Synchronized
     fun reset() {

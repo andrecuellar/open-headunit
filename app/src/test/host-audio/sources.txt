@@ -50,3 +50,6 @@ app/src/main/java/com/andrerinas/openheadunit/aap/AudioSessionConfig.kt
 app/src/test/host-audio/AudioTrackBufferRegression.kt
 app/src/test/host-audio/PcmEndingRegression.kt
 app/src/main/java/com/andrerinas/openheadunit/decoder/audio/AudioTrackBufferSizing.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmPlaybackPosition.kt
+app/src/main/java/com/andrerinas/openheadunit/decoder/audio/PcmRenderDeadline.kt
+app/src/test/host-audio/PcmRenderDeadlineRegression.kt

@@ -1,31 +1,36 @@
 # Changelog
-### v.3.5.0-beta4
-- Native AA: reconnect to a network that is still there, instead of rebuilding it every time
-- Native AA: wake the phone over the Bluetooth module on a cold start, and from the WiFi button
-- Native AA over hotspot: stop advertising an endpoint that moves, bring the hotspot back after a boot or ACC wake- #1014
-- Native AA: recover when the platform deletes the group mid-join, bring the hotspot back after sleep, log the Bluetooth link, and stop a QR crash below Android 4.4
+### v.3.5.0
+- Native AA: reconnect to a network that is still there, wake the phone over Bluetooth or the external module, bring a lost group or hotspot back after sleep, boot or ACC wake, stop advertising an address that moves, and pick, wake or hold back only for a phone that is on
+- Wireless: BSSID recovery via IPv6 EUI-64, keep the station stood down mid-session, hold every automatic bring-up while the unit is asleep, and log a refused start at boot instead of crashing
 - Added: Option to use Open Headunit as a launcher
-- External Bluetooth module: make the WiFi button work, find the module after a boot, and keep a Bluetooth auto-start from being lost behind the settings screen
 - Added: Simplified Chinese 🇨🇳, Indonesian 🇮🇩, Hindi 🇮🇳, Thai 🇹🇭, European Portuguese 🇵🇹
-- Connection: one attempt at a time, hold auto-connect behind settings and the pill's X, and fix the dongle's TLS handshake- #1015
-- Request low-latency Wi-Fi during wireless projection, thanks to @emotionbug
+- Connection: one attempt at a time, hold auto-connect behind settings and the pill's X, and fix the dongle's TLS handshake
 - Add on-demand "Check for Updates" button
 - Add FYT BLINK/DUDUAUTO module transport for Native AA thanks to @dohun0310
-- Added: BSSID recovery via IPv6 EUI-64
-- Mic: isolate capture sessions and bound uplink flow control, thanks to @emotionbug
-- Audio: stabilize playback and AAC recovery with opt-in AAudio, thanks to @emotionbug
-- WPP: retain active control connections and isolate listener generations, thanks to @emotionbug
 - Added: Apps drawer, thanks to @amp3r1
 - Navigation: stop the road name from sticking after the road changes
 - Self Mode: release the dummy VPN once the session is up, and start none for Android Auto 17.4 and later
-- Wireless: hold every automatic bring-up while the unit is asleep, and replay it once when the screen comes on
-- WiFi Direct: stand the station down again when the platform rejoins it mid-session
-- Native AA: ride out a ZLink daemon restart at cold start, and confirm a restarted hotspot stays up
-- Video: no codec on a dying surface, and a picture after a screen-off return in Texture mode
+- Video: no codec on a dying surface, a picture after a screen-off return in Texture mode, and a 720p fallback the phone can pick on a 2.4 GHz link
 - Automation: restore the three dropped automation commands, and stop Headunit Server connects preempting each other
-- Fix: crash when the USB service is missing, thanks to @muayyad-alsadi - #1057
+- Fix: crash when the USB service is missing, thanks to @muayyad-alsadi
 - Added: Performance overlay with its own settings screen, choose which lines it shows
 - Added: Root workaround for Android Auto 17.4+ wireless startup in the README, thanks to @mixalbl4-127
+- Wireless: request low-latency Wi-Fi during projection, and keep active WPP control connections with isolated listener generations, thanks to @emotionbug
+- Audio and mic: stabilize playback and AAC recovery with opt-in AAudio, honor the device's buffer minimum, smooth PCM transitions, isolate capture sessions and bound uplink flow control, thanks to @emotionbug
+- Protocol and TLS: unify AAP framing and message reassembly, keep payloads across application-phase control records, and send the final ByeBye first, thanks to @emotionbug
+- Connection: serialize session replacement, reconnect audio settings, cancel obsolete reconnect timers, and keep Nearby tunnels within their attempt, thanks to @emotionbug
+- Video: isolate decoder workers and retire activity-owned surfaces, thanks to @emotionbug
+- Floating button fixes and a connection status option, thanks to @Sesam17
+- USB: recover a stale phone without a replug, keep the phone's Media audio on if you choose, and stop reconnecting when no screen comes up
+- Settings: Exit in Android Auto ends the session again, Save writes only what changed, and the setup wizard sets the DPI again and asks for the vehicle type
+- Updates: open the release APK itself on units below Android 5.0
+- Audio: no more stutter or crackle with the Mgear Mstick4 dongle (firmware 1.9.4), thanks to @emotionbug
+- Self Mode: leave the media buttons and the media widget to the phone's own player, thanks to @Duzttt
+- Keymap: send letter keys to Android Auto, and give the night mode key its own entry, thanks to @Duzttt
+- Home: grey out the connection buttons you did not choose, thanks to @amp3r1
+- Night mode: new "Automatic (System)" option follows the system dark mode, thanks to @MohmmadQunibi
+- Settings: Enter saves a text dialog when the keyboard covers its buttons, thanks to @mohammed-just
+- DPI: fix the reduced Android Auto layout on small screens
 
 ### v.3.4.0
 - USB: connect non-Pixel phones without fighting a fast-reverting dongle

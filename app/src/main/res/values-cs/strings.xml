@@ -780,6 +780,9 @@
     <string name="dpi_row_auto_format">Automaticky: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, odesláno jako %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto vyžaduje plochu alespoň 748x450 dp, proto se místo %1$d DPI odešle %2$d.</string>
+    <string name="dpi_clamped_note_portrait">Na výšku Google Maps v Android Auto ignoruje dotyky na ploše užší než 730 dp, proto se místo %1$d DPI odešle %2$d.</string>
+    <string name="dpi_portrait_override_note">Odešle se %1$d DPI, jak je vybráno. Na výšku může Google Maps v Android Auto ignorovat dotyky nad %2$d DPI.</string>
+    <string name="dpi_floor_override_note">Odešle se %1$d DPI, jak je vybráno. Nad %2$d DPI je plocha menší než 748x450 dp, které Android Auto vyžaduje, a může se zobrazit zjednodušené rozvržení.</string>
     <string name="onb_conn_usb_label">USB (nebo adaptér)</string>
     <string name="onb_connection_self_detail">Samostatný režim spouští Android Auto v tomto zařízení bez telefonu.</string>
     <string name="connection_kind_all">Vše</string>

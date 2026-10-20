@@ -126,7 +126,8 @@ internal class ServiceDiscoveryResponse(context: Context, audioConfig: AudioSess
                     AppLog.i("[ServiceDiscovery] Density is: " + com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.describe(
                         densityDecision,
                         HeadUnitScreenConfig.getNegotiatedWidth() - phoneWidthMargin,
-                        HeadUnitScreenConfig.getNegotiatedHeight() - phoneHeightMargin
+                        HeadUnitScreenConfig.getNegotiatedHeight() - phoneHeightMargin,
+                        HeadUnitScreenConfig.getPixelAspectRatioE4()
                     ))
                     AppLog.i("[ServiceDiscovery] PixelAspectRatioE4 is: ${HeadUnitScreenConfig.getPixelAspectRatioE4()} (10000 = square)")
 

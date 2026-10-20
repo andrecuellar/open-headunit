@@ -788,6 +788,9 @@
     <string name="dpi_row_auto_format">自動: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, 送信値 %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Autoには748x450 dp以上のキャンバスが必要なため、%1$d DPIは%2$dとして送信されます。</string>
+    <string name="dpi_clamped_note_portrait">縦向きでは、Android Auto上のGoogle Mapsは幅730 dp未満のキャンバスでタッチを受け付けないため、%1$d DPIは%2$dとして送信されます。</string>
+    <string name="dpi_portrait_override_note">%1$d DPIは選択どおりに送信されます。縦向きでは、%2$d DPIを超えると、Android Auto上のGoogle Mapsがタッチを受け付けない場合があります。</string>
+    <string name="dpi_floor_override_note">%1$d DPIは選択どおりに送信されます。%2$d DPIを超えると、キャンバスがAndroid Autoに必要な748x450 dpより小さくなり、縮小されたレイアウトで表示される場合があります。</string>
     <string name="onb_conn_usb_label">USB（またはアダプター）</string>
     <string name="onb_connection_self_detail">自律モードはスマートフォンを接続せずにこの端末で Android Auto を実行します。</string>
     <string name="connection_kind_all">すべて</string>

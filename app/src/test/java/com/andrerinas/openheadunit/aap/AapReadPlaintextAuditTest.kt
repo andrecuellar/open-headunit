@@ -236,10 +236,10 @@ class AapReadPlaintextAuditTest {
             }
         }
 
-    private fun mediaHandler(): Pair<AapMessageHandlerType, AapTransport> {
+    private fun mediaHandler(process: (AapMessage) -> Boolean = { true }): Pair<AapMessageHandlerType, AapTransport> {
         val transport = mock<AapTransport>(defaultAnswer = org.mockito.Mockito.CALLS_REAL_METHODS)
         val audio = mock<AapAudio>()
-        whenever(audio.process(any())).thenReturn(true)
+        whenever(audio.process(any())).thenAnswer { process(it.getArgument(0)) }
         val video = mock<AapVideo>()
         whenever(video.isPayload(any())).thenReturn(true)
         fun field(target: Any, name: String, value: Any) = target.javaClass.getDeclaredField(name)
@@ -339,6 +339,41 @@ class AapReadPlaintextAuditTest {
                     read(listOf(Packet(flags, prefix, 32, channel = channel),
                         Packet(11, ByteArray(16), channel = channel)), bulk, delegate = handler)
                     verify(transport, times(1)).sendMediaAck(channel, 23)
+                }
+            }
+        }
+
+    @Test fun `failed audio DATA handoff returns credit and does not block following DATA`() =
+        mockStatic(SystemClock::class.java).use {
+            mockStatic(android.util.Log::class.java).use { logs ->
+                logs.`when`<String> { android.util.Log.getStackTraceString(any()) }.thenReturn("PCM frame rejected")
+                for (bulk in listOf(false, true)) for (channel in listOf(Channel.ID_AUD, Channel.ID_AU1, Channel.ID_AU2)) {
+                    var calls = 0
+                    val (handler, transport) = mediaHandler {
+                        if (++calls == 1) throw IllegalArgumentException("Incomplete PCM frame")
+                        true
+                    }
+                    // Both readers must survive the rejected complete DATA and retire both credits.
+                    read(listOf(Packet(11, ByteArray(13), channel = channel),
+                        Packet(11, ByteArray(14), channel = channel)), bulk, delegate = handler)
+                    assertEquals(2, calls)
+                    verify(transport, times(2)).sendMediaAck(channel, 23)
+                }
+            }
+        }
+
+    @Test fun `failed CSD handoff never returns a DATA credit`() =
+        mockStatic(SystemClock::class.java).use {
+            mockStatic(android.util.Log::class.java).use { logs ->
+                logs.`when`<String> { android.util.Log.getStackTraceString(any()) }.thenReturn("CSD rejected")
+                for (bulk in listOf(false, true)) {
+                    val (handler, transport) = mediaHandler {
+                        if (it.type == 1) throw IllegalArgumentException("invalid configuration")
+                        true
+                    }
+                    read(listOf(Packet(11, byteArrayOf(0, 1, 0x11, 0x90.toByte()), channel = Channel.ID_AUD),
+                        Packet(11, ByteArray(14), channel = Channel.ID_AUD)), bulk, delegate = handler)
+                    verify(transport, times(1)).sendMediaAck(Channel.ID_AUD, 23)
                 }
             }
         }

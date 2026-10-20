@@ -781,6 +781,9 @@
     <string name="dpi_row_auto_format">Automatycznie: %1$d (%2$dx%3$d dp)</string>
     <string name="dpi_row_clamped_format">%1$d, wysyłane jako %2$d (%3$dx%4$d dp)</string>
     <string name="dpi_clamped_note">Android Auto wymaga obszaru co najmniej 748x450 dp, dlatego %1$d DPI jest wysyłane jako %2$d.</string>
+    <string name="dpi_clamped_note_portrait">W orientacji pionowej Google Maps w Android Auto ignoruje dotyk na obszarze węższym niż 730 dp, dlatego %1$d DPI jest wysyłane jako %2$d.</string>
+    <string name="dpi_portrait_override_note">%1$d DPI jest wysyłane zgodnie z wyborem. W orientacji pionowej Google Maps w Android Auto może ignorować dotyk powyżej %2$d DPI.</string>
+    <string name="dpi_floor_override_note">%1$d DPI jest wysyłane zgodnie z wyborem. Powyżej %2$d DPI obszar jest mniejszy niż 748x450 dp wymagane przez Android Auto i może pojawić się zmniejszony układ.</string>
     <string name="onb_conn_usb_label">USB (lub adapter)</string>
     <string name="onb_connection_self_detail">Tryb samodzielny uruchamia Android Auto na tym urządzeniu bez telefonu.</string>
     <string name="connection_kind_all">Wszystkie</string>

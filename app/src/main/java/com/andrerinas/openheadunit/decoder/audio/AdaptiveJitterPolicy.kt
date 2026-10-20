@@ -13,6 +13,15 @@ internal class AdaptiveJitterPolicy(
     private var ceilingMs = initialCeilingMs
     private val maximumMs = maxOf(AudioJitterBufferPolicy.MAX_TARGET_MS, floorMs)
     private var marginMs = 15L
+    private var carriedChunkFrames = 0
+    private var quietPcmMs = 0L
+    private var releasedQuietMs = 10_000L
+    private var recoveryPausedAtMs = -1L
+    // A Stop separates supply clocks, not the delivery characteristics of the connection.
+    // Retain only a bounded reserve estimate; never carry PCM credit across silence.
+    // New evidence may equal the carried batch before the bank has filled the target.
+    // Keep the learned startup deadline in that case rather than reverting mid-preroll.
+    val hasCarriedReserve: Boolean get() = carriedChunkFrames + frames(10) > frames(floorMs)
     private val arrivals = SupplyClock()
     private val pcm = SupplyClock()
     var largestPcmGapMs = 0L
@@ -32,7 +41,7 @@ internal class AdaptiveJitterPolicy(
     // This invariant takes precedence over the nominal ceiling for unusually large batches.
     val targetFrames: Int
         get() {
-            val invariant = largestChunkFrames + frames(10)
+            val invariant = maxOf(largestChunkFrames, carriedChunkFrames) + frames(10)
             return maxOf(invariant, minOf(frames(ceilingMs), maxOf(frames(floorMs), invariant + frames(marginMs))))
         }
 
@@ -117,6 +126,7 @@ internal class AdaptiveJitterPolicy(
 
     fun onArrival(nowMs: Long, chunkFrames: Int) {
         if (chunkFrames <= 0) return
+        resumeRecovery(nowMs)
         arrivals.observe(nowMs, chunkFrames)
         largestArrivalGapMs = maxOf(largestArrivalGapMs, arrivals.gapMs)
         observeSupply(nowMs, arrivals, chunkFrames)
@@ -124,7 +134,19 @@ internal class AdaptiveJitterPolicy(
 
     fun onPcmDelivery(nowMs: Long, chunkFrames: Int) {
         if (chunkFrames <= 0) return
+        resumeRecovery(nowMs)
         pcm.observe(nowMs, chunkFrames)
+        if (pcm.excessMs > 5) resetQuietPlayback()
+        else {
+            quietPcmMs += pcm.gapMs
+            // Age across short prompts using only observed PCM supply intervals. A long
+            // idle between prompts earns no recovery, and two clocks cannot double-count it.
+            if (quietPcmMs - releasedQuietMs >= 1000) {
+                val steps = (quietPcmMs - releasedQuietMs) / 1000
+                carriedChunkFrames = (carriedChunkFrames - frames(steps * 5)).coerceAtLeast(0)
+                releasedQuietMs += steps * 1000
+            }
+        }
         largestPcmGapMs = maxOf(largestPcmGapMs, pcm.gapMs)
         // The actual decoded-frame count supplies the independent decoder batching bound.
         observeSupply(nowMs, pcm, 0)
@@ -137,7 +159,10 @@ internal class AdaptiveJitterPolicy(
         recordSupplySize(nowMs, maxOf(ingressFrames, completed))
         if (clock.gapMs > 0) {
             val excess = clock.excessMs.coerceAtMost(maximumMs)
-            if (excess > 5) lastDisturbanceMs = nowMs
+            if (excess > 5) {
+                lastDisturbanceMs = nowMs
+                resetQuietPlayback()
+            }
             val observedNeedMs = largestChunkFrames * 1000L / sampleRate + 20 + excess
             ceilingMs = maxOf(ceilingMs, observedNeedMs.coerceAtMost(maximumMs))
             if (excess + 10 > marginMs) {
@@ -165,6 +190,7 @@ internal class AdaptiveJitterPolicy(
     }
 
     fun onUnderrun(nowMs: Long) {
+        resetQuietPlayback()
         if (targetFrames >= frames(ceilingMs)) ceilingMs = (ceilingMs + 20).coerceAtMost(maximumMs)
         marginMs = (marginMs + 20).coerceAtMost(maxMarginMs())
         lastAdjustmentMs = nowMs
@@ -183,7 +209,28 @@ internal class AdaptiveJitterPolicy(
         }
     }
 
-    fun resetArrival() {
+    private fun resetQuietPlayback() {
+        quietPcmMs = 0
+        releasedQuietMs = 10_000
+    }
+
+    private fun resumeRecovery(nowMs: Long) {
+        if (recoveryPausedAtMs < 0) return
+        val idleMs = (nowMs - recoveryPausedAtMs).coerceAtLeast(0)
+        if (lastAdjustmentMs >= 0) lastAdjustmentMs += idleMs
+        if (lastDisturbanceMs >= 0) lastDisturbanceMs += idleMs
+        recoveryPausedAtMs = -1
+    }
+
+    fun resetArrival(retainReserve: Boolean = true) {
+        // A shortage can be observed after the final packet. Pause after that event,
+        // and preserve the pause point if reset is repeated before another delivery.
+        recoveryPausedAtMs = maxOf(recoveryPausedAtMs, arrivals.lastMs, pcm.lastMs,
+            lastDisturbanceMs, lastAdjustmentMs)
+        carriedChunkFrames = if (retainReserve)
+            maxOf(carriedChunkFrames, largestChunkFrames).coerceAtMost(frames(maximumMs - 10))
+        else 0
+        if (!retainReserve) resetQuietPlayback()
         arrivals.reset(); pcm.reset()
         largestArrivalGapMs = 0L; largestPcmGapMs = 0L
         chunkEpochs.fill(-1L); chunkMaxima.fill(0); largestChunkFrames = 0

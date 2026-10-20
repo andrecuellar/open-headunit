@@ -4,6 +4,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
+import org.junit.AssumptionViolatedException
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -35,6 +36,11 @@ class BlinkAutoSerialChannelTest {
         assertEquals(BlinkAutoSerialChannel.EXIT_STOCK_RUNNING, runGuard(guard, "echo package:com.syu.carlink", "echo 1234; return 0"))
         assertEquals(BlinkAutoSerialChannel.EXIT_UNVERIFIED, runGuard(guard, "echo package:com.syu.carlink", "return 2"))
         assertEquals(BlinkAutoSerialChannel.EXIT_UNVERIFIED, runGuard(guard, "return 2", "return 1"))
+    }
+
+    @Test
+    fun `bridge script carries no carriage return`() {
+        assertFalse(BlinkAutoSerialChannel.BRIDGE_SCRIPT.contains('\r'))
     }
 
     @Test
@@ -127,13 +133,21 @@ class BlinkAutoSerialChannelTest {
         assertTrue(flushFailed.get())
     }
 
+    // Windows joins arguments into one command line and leaves inner quotes unescaped, so the script goes on stdin.
     private fun runGuard(guard: String, pmBody: String, pidofBody: String): Int {
         val script = """
             pm() { $pmBody; }
             pidof() { $pidofBody; }
             $guard
         """.trimIndent()
-        return ProcessBuilder("sh", "-c", script).start().waitFor()
+        val process = try {
+            ProcessBuilder("sh", "-s").redirectErrorStream(true).start()
+        } catch (e: IOException) {
+            throw AssumptionViolatedException("no POSIX sh on this host", e)
+        }
+        process.outputStream.bufferedWriter(Charsets.UTF_8).use { it.write(script + "\n") }
+        process.inputStream.readBytes()
+        return process.waitFor()
     }
 
     private fun expectIOException(block: () -> Unit) {

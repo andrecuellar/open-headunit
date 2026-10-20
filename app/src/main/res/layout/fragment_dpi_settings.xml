@@ -84,6 +84,13 @@
                 android:textAppearance="?attr/textAppearanceCaption"
                 android:visibility="gone" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dpi_portrait_override_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/dpi_over_panel_warning"
                 android:layout_width="match_parent"

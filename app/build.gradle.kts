@@ -96,8 +96,8 @@ android {
         applicationId = "com.andrerinas.headunitrevived"
         minSdk = 16
         targetSdk = 36
-        versionCode = 117
-        versionName = "3.5.0-beta4"
+        versionCode = 120
+        versionName = "4.0.0-alpha"
         setProperty("archivesBaseName", "${applicationId}_${versionName}")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
@@ -208,6 +208,17 @@ android {
     lint {
         abortOnError = false
         disable += "PackagedPrivateKey"
+
+        // All three come from androidx.fragment's UnsafeFragmentLifecycleObserverDetector, which
+        // walks a Fragment's call graph from its lifecycle methods with no depth limit in 1.6.2,
+        // the newest version this module can use (1.7.x, 1.8.x and 1.9.x need minSdk 19, 21 and
+        // 23). On HomeFragment that walk does not finish, so lint never produces a report. The
+        // first fragment release with a depth cap is 1.9.0 and it also needs minSdk 23, so these
+        // stay off while the app keeps minSdk 16. They report nothing today; every Fragment here
+        // already passes viewLifecycleOwner.
+        disable += "FragmentLiveDataObserve"
+        disable += "FragmentBackPressedCallback"
+        disable += "FragmentAddMenuProvider"
     }
 
     compileOptions {

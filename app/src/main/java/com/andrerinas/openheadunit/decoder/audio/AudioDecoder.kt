@@ -113,10 +113,10 @@ class AudioDecoder {
     }
 
     /**
-     * Each channel's bank uses [audioLatencyMultiplier], capped by the caller for short prompts.
-     * A shared static-focus output is tuned independently rather than inheriting the preference
-     * of whichever sink was set up first. Otherwise the guidance cap can silently size music's
-     * output too. [session] also fences replacement connections: an old setup must not rebuild
+     * Each channel's network bank uses the selected [audioLatencyMultiplier]. Short completed
+     * prompts drain below that target on Stop. Device output buffering is tuned independently,
+     * so a shared static-focus output does not inherit the first sink's network reserve.
+     * [session] also fences replacement connections: an old setup must not rebuild
      * or register a sink in a newer connection's mixer.
      */
     @Synchronized fun start(

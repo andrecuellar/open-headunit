@@ -6,6 +6,36 @@ import org.junit.Test
 class AudioTimestampMonitorTest {
     private val frameUs = 42_667L
 
+    @Test fun `short prompt flush retains its paired gap and excludes the following idle`() {
+        val monitor = AudioTimestampMonitor()
+        monitor.onPacket(1_000_000, 5_000_000, 64_000)
+        monitor.onPacket(1_064_000, 5_240_000, 64_000)
+        val report = monitor.finish()!!
+        assertEquals(2, report.packets)
+        assertEquals(176_000L, report.maxDeliveryIncreaseUs)
+        assertEquals(64_000L, report.arrivalSpike!!.sourceGapUs)
+        assertNull(monitor.finish())
+        monitor.onPacket(9_000_000, 60_000_000, 64_000)
+        val next = monitor.finish()!!
+        assertEquals(1, next.packets)
+        assertEquals(0, next.comparablePairs)
+        assertFalse(next.hasGap)
+    }
+
+    @Test fun `Stop flush does not repeat periodic reports and keeps only new packets`() {
+        val monitor = AudioTimestampMonitor(100_000)
+        monitor.onPacket(1_000_000, 5_000_000, frameUs)
+        assertNotNull(monitor.onPacket(1_042_667, 5_120_000, frameUs))
+        assertNull(monitor.finish())
+        monitor.onPacket(2_000_000, 6_000_000, frameUs)
+        monitor.onPacket(2_042_667, 6_120_000, frameUs)
+        monitor.onPacket(2_085_334, 6_162_667, frameUs)
+        val tail = monitor.finish()!!
+        assertEquals(1, tail.packets)
+        assertEquals(1, tail.comparablePairs)
+        assertFalse(tail.hasGap)
+    }
+
     @Test fun `different boot times do not look like audio latency`() {
         val monitor = AudioTimestampMonitor(frameUs)
         assertNull(monitor.onPacket(9_000_000_000, 1_000_000, frameUs))

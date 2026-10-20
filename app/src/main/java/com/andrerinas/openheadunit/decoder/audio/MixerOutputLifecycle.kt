@@ -10,7 +10,7 @@ internal class MixerOutputLifecycle(private val keepOutputActive: Boolean) {
     fun outputProgress(nowMs: Long) { idleSinceMs = nowMs }
 
     fun update(nowMs: Long, idle: Boolean, warming: Boolean, receivedAudio: Boolean,
-               drainMs: Long): Action {
+               drainMs: Long, consumed: Boolean = true): Action {
         if (!started) {
             idleSinceMs = -1L
             if (idle && !warming) return Action.WAIT
@@ -19,7 +19,7 @@ internal class MixerOutputLifecycle(private val keepOutputActive: Boolean) {
         }
         if (idle && !warming && (!keepOutputActive || !receivedAudio)) {
             if (idleSinceMs < 0) idleSinceMs = nowMs
-            if (nowMs - idleSinceMs >= drainMs) {
+            if (consumed && nowMs - idleSinceMs >= drainMs) {
                 started = false
                 idleSinceMs = -1L
                 return Action.PAUSE

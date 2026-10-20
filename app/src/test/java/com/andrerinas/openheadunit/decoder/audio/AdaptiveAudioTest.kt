@@ -4,7 +4,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AdaptiveAudioTest {
-    private fun bankWithExpiredLargePacket(): AdaptivePcmBuffer {
+    private fun bankWithResumedBacklog(): AdaptivePcmBuffer {
         val buffer = AdaptivePcmBuffer(latencyMultiplier = 2, isMediaSink = true)
         buffer.noteArrival(0, 8192)
         buffer.write(ShortArray(16384) { 12000 }, 16384, 0)
@@ -12,12 +12,15 @@ class AdaptiveAudioTest {
         buffer.write(ShortArray(4096) { 12000 }, 4096, 171)
         buffer.render(ShortArray(960), 171)
         buffer.finish() // an intentional pause, not ten seconds of active transport starvation
-        buffer.noteArrival(10040, 2048) // expire the old estimate while PCM remains banked
+        // Pauses retain the learned target. Add real backlog above that target so the
+        // Stop test still proves that draining a tail never performs latency recovery.
+        buffer.noteArrival(10040, 2048)
+        buffer.write(ShortArray(4096) { 12000 }, 4096, 10040)
         return buffer
     }
 
     @Test fun `finish drains buffered PCM without attempting latency recovery`() {
-        val buffer = bankWithExpiredLargePacket()
+        val buffer = bankWithResumedBacklog()
         val depth = buffer.depthFrames()
         assertTrue(depth > buffer.targetFrames() + 1568)
         buffer.finish()
@@ -31,7 +34,7 @@ class AdaptiveAudioTest {
 
     @Test fun `backlog is preserved until physical capacity requires overflow`() {
         for (packets in listOf(8, 40)) {
-            val buffer = bankWithExpiredLargePacket()
+            val buffer = bankWithResumedBacklog()
             val out = ShortArray(960)
             buffer.render(out, 10040)
             assertEquals(0L, buffer.droppedFrames)

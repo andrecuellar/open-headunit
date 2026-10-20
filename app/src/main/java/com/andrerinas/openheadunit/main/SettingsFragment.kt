@@ -3430,12 +3430,17 @@ class SettingsFragment : Fragment() {
             pendingScreenOrientation ?: settings.screenOrientation
         )
         val (ow, oh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.orientPanel(pw, ph, portrait)
-        val (vw, vh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.visibleSize(
-            pendingVideoFitMode ?: settings.videoFitMode, ow, oh, res.width, res.height
+        val fit = pendingVideoFitMode ?: settings.videoFitMode
+        val (vw, vh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.visibleSize(fit, ow, oh, res.width, res.height)
+        val par = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.pixelAspectE4(
+            fit, ow, oh, res.width, res.height, pendingPixelAspectRatioE4 ?: settings.pixelAspectRatioE4
         )
-        val d = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.decide(stored, preset, vw, vh)
-        val cw = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(vw, d.announced)
-        val ch = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(vh, d.announced)
+        val d = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.decide(
+            stored, preset, vw, vh, par, settings.dpiFloorOverride
+        )
+        val (sw, sh) = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.phoneCanvas(vw, vh, par)
+        val cw = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(sw, d.announced)
+        val ch = com.andrerinas.openheadunit.utils.AnnouncedDensityPolicy.canvasDp(sh, d.announced)
         return when {
             res.width <= 0 -> if (stored == 0) getString(R.string.auto) else stored.toString()
             stored == 0 -> getString(R.string.dpi_row_auto_format, d.announced, cw, ch)

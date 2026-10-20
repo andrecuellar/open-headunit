@@ -379,6 +379,11 @@ class Settings(private val context: Context) {
             prefs.edit().putInt("dpi-pixel-density", value).apply()
         }
 
+    /** The DPI screen's "Use anyway": send a stored DPI above the canvas floor (HUIG or portrait) as is. */
+    var dpiFloorOverride: Boolean
+        get() = prefs.getBoolean("dpi-floor-override", false)
+        set(value) { prefs.edit().putBoolean("dpi-floor-override", value).apply() }
+
     /** The wizard's screen size, a [SystemOptimizer.DisplaySizePreset] name; null until picked. */
     var displaySizePreset: String?
         get() = prefs.getString("display-size-preset", null)

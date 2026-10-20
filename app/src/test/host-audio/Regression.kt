@@ -23,9 +23,19 @@ private fun focusLease() = PlaybackFocusLease().apply {
 private fun PlaybackFocusLease.activity(channel: Int, nowMs: Long) = activity(channel, fixtureOwner, nowMs)
 
 fun main() {
+    for (sdk in listOf(16, 21, 22)) aacHealthySyncProgressRegression(sdk)
+    aacHealthyProgressRegression()
     audioTrackBufferRegression()
+    automaticPromptRecoveryRegression()
+    silentRecoveryRegression(keepActive = false)
+    silentRecoveryRegression(keepActive = true)
+    bufferTuningRecoveryMarkerRegression()
+    boundedPromptRecoveryRegression()
     pcmEndingRegression()
+    pcmRenderDeadlineRegression()
+    pcmRenderResumeRegression()
     audioSettingsRegression()
+    audioLatencyPreferenceRegression()
     aacProgressOwnershipRegression(csdReplacement = true)
     aacProgressOwnershipRegression(csdReplacement = false)
     handoffRetirementBeforePublicationRegression()
@@ -808,9 +818,13 @@ private fun aacProgressOwnershipRegression(csdReplacement: Boolean) {
         val watchdog = field(track, "progressWatchdog")!!
         val waitingSince = field(watchdog, "outputWaitingSince")
         check((waitingSince as Long) >= 0)
+        val healthyUs = field(field(track, "aacRecovery")!!, "healthyOutputUs")
         val copiedMs = field(track, "lastOutputCopiedMs")
         val ptsUs = field(track, "lastOutputPtsUs")
         resume.countDown(); callback.join(3000); check(!callback.isAlive)
+        check(field(field(track, "aacRecovery")!!, "healthyOutputUs") == healthyUs) {
+            "$mode: retired output replenished replacement recovery budget"
+        }
         check(field(watchdog, "outputWaitingSince") == waitingSince) {
             "$mode: retired codec output erased the replacement's watchdog"
         }
@@ -1235,6 +1249,36 @@ private fun protocolSessionClosureRegression() {
     }
 }
 
+/** Exercise the real Setup-to-bank path; direct buffer tests cannot catch per-channel caps. */
+private fun audioLatencyPreferenceRegression() {
+    val handler = android.os.Handler
+    for (sdk in listOf(16, 33)) for (multiplier in listOf(1, 2, 4, 8, 16))
+        for (codec in listOf(1, 2)) for (shared in listOf(false, true)) {
+        Build.VERSION.SDK_INT = sdk
+        handler.reset()
+        val settings = com.andrerinas.openheadunit.utils.Settings().apply {
+            audioLatencyMultiplier = multiplier
+            staticAudioFocus = shared
+        }
+        val decoder = AudioDecoder()
+        val audio = com.andrerinas.openheadunit.aap.AapAudio(decoder, AudioManager(), settings)
+        try {
+            for (id in listOf(4, 5, 6)) {
+                audio.noteSinkCodec(id, codec)
+                audio.precreateAudioTrack(id)
+                val track = checkNotNull(decoder.getTrack(id))
+                val bank = (field(track, "mixerChannel") as AudioMixer.Channel).buffer
+                val startupFloorMs = if (id == 6) 120L else 60L
+                val requested = maxOf(startupFloorMs, AudioJitterBufferPolicy.targetMsFor(multiplier)) * 48
+                check(bank.targetFrames().toLong() == requested) {
+                    "sdk=$sdk channel=$id codec=$codec multiplier=$multiplier target=${bank.targetFrames()} requested=$requested"
+                }
+            }
+        } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
+    }
+    println("PASS all audio sinks honor each selected reserve through AapAudio Setup for PCM and AAC with shared and separate outputs on API 16/33")
+}
+
 /** Saving preferences must not combine new focus/codec choices with old output ownership. */
 private fun audioSettingsRegression() {
     val handler = android.os.Handler
@@ -1326,4 +1370,229 @@ private fun audioSettingsRegression() {
         check(decoder.playbackCallbacks.canRender())
     } finally { audio.releaseAllFocus(); decoder.stop(); handler.runAll(); handler.reset() }
     println("PASS session snapshots preserve focus/routing/format until replacement; local output changes retain the negotiated codec")
+}
+
+
+/** Retained speech must restart its output and focus without another packet or Start. */
+private fun automaticPromptRecoveryRegression() {
+    val lease = focusLease()
+    lease.complete(lease.activity(5, SystemClock.elapsedRealtime())!!)
+    val reacquired = java.util.concurrent.atomic.AtomicInteger()
+    val mixer = AudioMixer(canRender = { lease.canRender(SystemClock.elapsedRealtime()) },
+        onRecoveryActivity = {
+            lease.activity(5, SystemClock.elapsedRealtime())?.let {
+                reacquired.incrementAndGet()
+                lease.complete(it)
+            }
+        })
+    val track = wrapper(mixer, false)
+    AudioTrack.failMinimum = true
+    try {
+        mixer.start()
+        track.write(pcm(240), 0, 960)
+        track.pauseForIdle()
+        waitFor("output enters bounded recovery cooldown") {
+            (field(mixer, "output") as RecoveringPcmOutput).isParked
+        }
+        lease.release(5, lease.snapshot().getValue(5))
+        val before = AudioTrack.created.size
+        AudioTrack.failMinimum = false
+        SystemClock.offsetMs += 2000
+        waitFor("cooldown reacquires focus and resumes the existing prompt without Start") {
+            AudioTrack.created.drop(before).any { it.samples.any { sample -> sample.toInt() != 0 } }
+        }
+        check(reacquired.get() == 1)
+        waitFor("recovered short prompt drains") { track.isQuiescent(SystemClock.elapsedRealtime()) }
+    } finally {
+        AudioTrack.failMinimum = false
+        finish(track)
+        mixer.stop()
+        SystemClock.offsetMs = 0
+    }
+    println("PASS pending prompt recovers after cooldown, reacquires focus and drains without another Start")
+}
+
+private fun silentRecoveryRegression(keepActive: Boolean) {
+    val allowed = java.util.concurrent.atomic.AtomicBoolean(true)
+    val reacquired = java.util.concurrent.atomic.AtomicInteger()
+    val mixer = AudioMixer(keepOutputActive = keepActive, canRender = { allowed.get() }, onRecoveryActivity = {
+        reacquired.incrementAndGet(); allowed.set(true)
+    })
+    val track = wrapper(mixer, false)
+    try {
+        // The initial warmup creates the output before we feed the short prompt.
+        mixer.start()
+        track.preparePlayback()
+        waitFor("output opened for silent-tail failure") { field(mixer, "output")?.let {
+            (it as RecoveringPcmOutput).writtenFrames >= 0
+        } == true }
+        val raw = AudioTrack.created.last()
+        var heardPcm = false
+        raw.writeHook = { data, offset, count ->
+            val real = (offset until offset + count).any { data[it].toInt() != 0 }
+            if (real) heardPcm = true
+            if (heardPcm && !real) { AudioTrack.failMinimum = true; -6 } else null
+        }
+        track.write(pcm(240), 0, 960)
+        track.pauseForIdle()
+        waitFor("silent tail parks failed output") {
+            (field(mixer, "output") as RecoveringPcmOutput).isTerminal
+        }
+        allowed.set(false)
+        val opens = AudioTrack.minimumQueries
+        SystemClock.offsetMs += 60_000
+        if (!keepActive) {
+            waitFor("silence-only failure becomes quiescent") { track.isQuiescent(SystemClock.elapsedRealtime()) }
+        } else {
+            // Static mode deliberately keeps rendering silent cycles; writePending need not
+            // become observably false between them. Check pacing, not dynamic focus release.
+            waitFor("keep-active output has only silence left") { channel(mixer).buffer.isIdle() }
+        }
+        val clockReads = java.util.concurrent.atomic.AtomicInteger()
+        SystemClock.hook = {
+            if (Thread.currentThread().name.startsWith("AudioMixer-")) clockReads.incrementAndGet()
+        }
+        Thread.sleep(500)
+        SystemClock.hook = null
+        check(clockReads.get() < 1000) { "unpaced silent mixer: ${clockReads.get()} clock reads in 500ms" }
+        check(reacquired.get() == 0 && AudioTrack.minimumQueries == opens)
+        check(mixer.isRunning())
+    } finally {
+        SystemClock.hook = null
+        AudioTrack.failMinimum = false; finish(track); mixer.stop(); SystemClock.offsetMs = 0
+    }
+    println("PASS failed silent tail stays paced without reopening or reacquiring focus (keepActive=$keepActive)")
+}
+
+private fun bufferTuningRecoveryMarkerRegression() {
+    val mixer = AudioMixer(keepOutputActive = true)
+    val track = wrapper(mixer, false)
+    try {
+        mixer.start()
+        track.write(pcm(240), 0, 960)
+        track.pauseForIdle()
+        waitFor("short prompt submitted before tuning failure") { channel(mixer).lastOutputFrame > 0 }
+        val raw = AudioTrack.created.last()
+        raw.bufferHook = {
+            // Model a long-lived old output. This executes on the output owner, after the
+            // cycle has stamped its marker, just before tuning forces an out-of-write reopen.
+            channel(mixer).lastOutputFrame = 48_000L * 60 * 60
+            error("audio server died during buffer tuning")
+        }
+        raw.bufferSizeInFrames += 480
+        waitFor("tuning replaces the old output") { raw.closed && AudioTrack.created.last() !== raw }
+        waitFor("old frame clock cannot hold replacement focus") {
+            channel(mixer).outputConsumed && track.isQuiescent(SystemClock.elapsedRealtime())
+        }
+        check(mixer.isRunning())
+    } finally { finish(track); mixer.stop() }
+    println("PASS output replacement during buffer tuning retires the old device's drain marker")
+}
+
+private fun boundedPromptRecoveryRegression() {
+    val allowed = java.util.concurrent.atomic.AtomicBoolean(true)
+    val reacquired = java.util.concurrent.atomic.AtomicInteger()
+    val mixer = AudioMixer(canRender = { allowed.get() }, onRecoveryActivity = {
+        reacquired.incrementAndGet(); allowed.set(true)
+    })
+    val track = wrapper(mixer, false)
+    AudioTrack.failMinimum = true
+    try {
+        mixer.start()
+        track.write(pcm(240), 0, 960)
+        track.pauseForIdle()
+        waitFor("initial recovery parks") { (field(mixer, "output") as RecoveringPcmOutput).isParked }
+        repeat(3) { burst ->
+            allowed.set(false)
+            val before = AudioTrack.minimumQueries
+            SystemClock.offsetMs += 10_000
+            waitFor("automatic burst $burst ends") {
+                AudioTrack.minimumQueries >= before + 3 &&
+                    (field(mixer, "output") as RecoveringPcmOutput).isParked
+            }
+        }
+        val opens = AudioTrack.minimumQueries
+        check(reacquired.get() == 3)
+        allowed.set(false)
+        SystemClock.offsetMs += 1_000_000
+        Thread.sleep(250)
+        check(reacquired.get() == 3 && AudioTrack.minimumQueries == opens)
+        check(track.isQuiescent(SystemClock.elapsedRealtime()))
+    } finally {
+        AudioTrack.failMinimum = false; finish(track); mixer.stop(); SystemClock.offsetMs = 0
+    }
+    println("PASS exhausted automatic retries stop reopening and interrupting focus until a fresh Start")
+}
+
+/** Real callback -> PCM conversion -> recovery policy, including unusable output. */
+private fun aacHealthyProgressRegression() {
+    val mixer = AudioMixer(audioLatencyMultiplier = 2)
+    val track = wrapper(mixer)
+    val codec = field(track, "decoder") as MediaCodec
+    val recovery = field(track, "aacRecovery") as AacDecoderRecovery
+    try {
+        synchronized(field(track, "codecOutputLock")!!) {
+            synchronized(recovery) {
+                recovery.request(); check(recovery.next(0) == AacDecoderRecovery.Action.REBUILD)
+                repeat(90) { tick ->
+                    SystemClock.offsetMs = tick * 100L
+                    codec.emit(pcm(4800))
+                }
+                check((field(recovery, "healthyOutputUs") as Long) > 0)
+                codec.emit(ByteArray(3)) // Not one complete stereo PCM frame.
+                check(recovery.pending && field(recovery, "healthyOutputUs") == 0L) {
+                    "Rejected PCM must break healthy progress and request bounded recovery"
+                }
+            }
+        }
+        waitFor("rejected async PCM triggers a replacement") { field(track, "decoder")?.let { it !== codec } == true }
+        val fresh = field(track, "decoder") as MediaCodec
+        waitFor("replacement async format is ready") { (field(track, "outputFormatState") as AacOutputFormat).acceptsOutput }
+        val attempts = recovery.attempts
+        codec.emit(ByteArray(3))
+        check(!recovery.pending && recovery.attempts == attempts) { "Retired callback requested recovery" }
+        repeat(101) { tick ->
+            SystemClock.offsetMs = 20_000 + tick * 100L
+            fresh.emit(pcm(4800))
+        }
+        check(recovery.attempts == 0) { "Successful PCM handoff did not replenish retries" }
+        println("PASS rejected async PCM recovers, retired output is ignored, healthy output earns retries")
+    } finally {
+        finish(track); SystemClock.offsetMs = 0
+    }
+}
+
+private fun aacHealthySyncProgressRegression(sdk: Int) {
+    val originalSdk = Build.VERSION.SDK_INT
+    Build.VERSION.SDK_INT = sdk
+    val mixer = AudioMixer(audioLatencyMultiplier = 2)
+    val track = wrapper(mixer)
+    var codec = field(track, "decoder") as MediaCodec
+    val recovery = field(track, "aacRecovery") as AacDecoderRecovery
+    try {
+        synchronized(recovery) {
+            recovery.request(); check(recovery.next(0) == AacDecoderRecovery.Action.REBUILD)
+        }
+        val rejected = codec
+        rejected.syncOutputs.offer(ByteArray(3))
+        waitFor("API$sdk rejected PCM triggers a replacement") {
+            field(track, "decoder")?.let { it !== rejected } == true
+        }
+        codec = field(track, "decoder") as MediaCodec
+        check(synchronized(recovery) { field(recovery, "healthyOutputUs") == 0L })
+        repeat(101) { tick ->
+            SystemClock.offsetMs = 20_000 + tick * 100L
+            val before = synchronized(recovery) { field(recovery, "healthyOutputUs") as Long }
+            codec.syncOutputs.offer(pcm(4800))
+            waitFor("API$sdk synchronous PCM reaches recovery policy") {
+                synchronized(recovery) {
+                    recovery.attempts == 0 || (field(recovery, "healthyOutputUs") as Long) > before
+                }
+            }
+        }
+        check(recovery.attempts == 0)
+        println("PASS API$sdk synchronous output earns a fresh AAC retry budget")
+    } finally {
+        finish(track); Build.VERSION.SDK_INT = originalSdk; SystemClock.offsetMs = 0
+    }
 }
