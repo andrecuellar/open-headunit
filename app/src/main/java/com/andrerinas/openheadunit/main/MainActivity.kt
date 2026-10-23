@@ -35,6 +35,7 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.aap.AapProjectionActivity
 import com.andrerinas.openheadunit.aap.AapService
 import com.andrerinas.openheadunit.aap.NativeTransport
+import com.andrerinas.openheadunit.aap.ProjectionWatchdogPolicy
 import com.andrerinas.openheadunit.app.BaseActivity
 import com.andrerinas.openheadunit.app.BtAutoStartRearmPolicy
 import com.andrerinas.openheadunit.connection.CommManager
@@ -580,6 +581,14 @@ class MainActivity : BaseActivity() {
         }
         // It does not move the tracker, so the pill has to be asked again when it changes.
         viewModel.homeShowsBringUp.observe(this) { renderStagePill(ConnectionStageTracker.stage.value) }
+        // Nor does a session going live or ending: the tracker can hold the same step across both.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                App.provide(this@MainActivity).commManager.connectionState.collect {
+                    renderStagePill(ConnectionStageTracker.stage.value)
+                }
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 ConnectionStageTracker.network.collect { renderNetworkLine(it) }
@@ -636,8 +645,16 @@ class MainActivity : BaseActivity() {
             PhoneExitQuietPolicy.suppressesPill(ConnectionStageTracker.phoneLeftAtMs, now)
         val homeTellsIt = viewModel.homeShowsBringUp.value == true
         // PILL_THEN_OVERLAY hands the screen to the overlay part-way through an attempt.
-        // Re-raising the pill under it would undo that promotion.
-        val shown = if (stage == null || overlayOwnsScreen() || phoneLeftQuiet || homeTellsIt) null else stage
+        // Re-raising the pill under it would undo that promotion. A live session keeps the tracker
+        // on its last step until it ends, and the home seen during one says so already.
+        val withheld = StatusPillPolicy.withheld(
+            stage = stage,
+            sessionLive = ProjectionWatchdogPolicy.isSessionLive(App.provide(this).commManager.connectionState.value),
+            overlayOwnsScreen = overlayOwnsScreen(),
+            phoneLeftQuiet = phoneLeftQuiet,
+            homeTellsIt = homeTellsIt,
+        )
+        val shown = StatusPillPolicy.shown(stage, withheld)
         // What the user is actually being told, which no other line records. A reporter's
         // screenshot and their log can then be read against each other. A step the overlay hides
         // is still named: without that, a session where an auto-connect happened to be in flight
@@ -647,10 +664,13 @@ class MainActivity : BaseActivity() {
             renderedStage = shown
             val step = when {
                 shown != null -> shown.name
-                stage != null && phoneLeftQuiet -> "${stage.name} (not shown, the phone ended the session)"
-                stage != null && homeTellsIt -> "${stage.name} (not shown, the home's main button tells it)"
-                stage != null -> "${stage.name} (not shown, the overlay owns the screen)"
-                else -> "hidden"
+                stage == null -> "hidden"
+                else -> "${stage.name} (not shown, " + when (withheld) {
+                    StatusPillPolicy.Withheld.SESSION_LIVE -> "the session is live"
+                    StatusPillPolicy.Withheld.PHONE_LEFT -> "the phone ended the session"
+                    StatusPillPolicy.Withheld.HOME_TELLS_IT -> "the home's main button tells it"
+                    else -> "the overlay owns the screen"
+                } + ")"
             }
             AppLog.i("MainActivity: status pill step: $step")
         }
