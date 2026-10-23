@@ -1064,9 +1064,33 @@ class MainActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) {
+            // Like any launcher, Home leaves whatever inner screen was open (USB list, network
+            // list, app drawer) for the home itself. The home then shows its first page.
+            returnToHomeRoot()
             viewModel.homePressed.value = SystemClock.uptimeMillis()
         }
         handleLaunchIntent(intent)
+    }
+
+    /**
+     * Pops the nav back stack down to the home. super.onNewIntent has already marked the fragment
+     * state as not saved, so the pop is legal here; the check only guards a host that changes that.
+     */
+    private fun returnToHomeRoot() {
+        val navHost = supportFragmentManager.findFragmentById(R.id.main_content)
+            as? androidx.navigation.fragment.NavHostFragment ?: return
+        val navController = navHost.navController
+        val current = navController.currentDestination?.id ?: return
+        if (current == R.id.homeFragment) return
+        if (supportFragmentManager.isStateSaved) {
+            AppLog.w("MainActivity: Home key on an inner screen with the fragment state saved, not popping")
+            return
+        }
+        if (navController.popBackStack(R.id.homeFragment, false)) {
+            AppLog.i("MainActivity: Home key, back to the home from ${runCatching { resources.getResourceEntryName(current) }.getOrDefault(current.toString())}")
+        } else {
+            AppLog.w("MainActivity: Home key, the home is not on the back stack")
+        }
     }
 
     /**
