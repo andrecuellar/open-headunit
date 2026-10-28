@@ -52,6 +52,13 @@ object AutoStartCheckPolicy {
 
     private val FROM_PID = Regex("""from pid (\d+)""")
 
+    /**
+     * Lists [dir] one name per line. Through the unit's ADB the command can run in an interactive
+     * shell, where `ls` sees a terminal and prints columns; the pipe makes it print one per line,
+     * which toolbox on Android 4.x already does.
+     */
+    fun listCommand(dir: String): String = "ls $dir 2>/dev/null | cat"
+
     /** Full paths, one per line, kept when the file name looks like an app list. */
     fun listCandidates(paths: String): List<String> = paths.lineSequence()
         .map { it.trim() }

@@ -43,6 +43,11 @@ class AutoStartCheckPolicyTest {
     }
 
     @Test
+    fun `the listing is piped so an interactive shell does not print columns`() {
+        assertTrue(AutoStartCheckPolicy.listCommand("/system/etc").endsWith("| cat"))
+    }
+
+    @Test
     fun `a directory name alone does not make a candidate`() {
         assertEquals(emptyList<String>(), AutoStartCheckPolicy.listCandidates("/system/etc/keep/hosts\nls: /odm/etc: No such file"))
     }

@@ -39,7 +39,7 @@ object AutoStartCheck {
 
         // Filtering stays in Kotlin: toolbox on Android 4.x has no sed, and grep only from 4.4 on some.
         val listing = AutoStartCheckPolicy.LIST_DIRS.map { dir ->
-            read("ls $dir 2>/dev/null").lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
+            read(AutoStartCheckPolicy.listCommand(dir)).lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
                 .joinToString("\n") { "$dir/$it" }
         }.joinToString("\n")
         val listFiles = AutoStartCheckPolicy.listCandidates(listing).map { path ->
