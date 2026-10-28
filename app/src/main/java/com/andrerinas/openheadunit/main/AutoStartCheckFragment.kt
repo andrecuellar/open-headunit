@@ -20,11 +20,13 @@ import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.Verdict
 import com.andrerinas.openheadunit.app.AutoStartFixPolicy
+import com.andrerinas.openheadunit.app.MakerWhitelistPolicy
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AutoStartCheck
 import com.andrerinas.openheadunit.utils.AutoStartFixes
+import com.andrerinas.openheadunit.utils.MakerWhitelist
 import com.andrerinas.openheadunit.utils.OemAppManager
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
@@ -124,6 +126,7 @@ class AutoStartCheckFragment : Fragment() {
         ))
 
         addFixes(items, f)
+        addMakerWhitelist(items, f)
 
         items.add(SettingItem.ActionButton("checkCopy", R.string.auto_start_check_copy) { copyReport(f) })
         items.add(SettingItem.ActionButton("checkShare", R.string.auto_start_check_share) { shareReport(f) })
@@ -168,6 +171,94 @@ class AutoStartCheckFragment : Fragment() {
                     if (on) runFix { AutoStartFixes.turnDuraSpeedOff(it, "settings") }
                 }
             ))
+        }
+    }
+
+    /** Phase three of #1122: the maker's own lists in /system, for formats that are known. */
+    private fun addMakerWhitelist(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings) {
+        val format = MakerWhitelistPolicy.detect(f.listFiles.map { it.path }) ?: return
+        val status = MakerWhitelistPolicy.status(format, f.listFiles.filter { it.hasApp }.map { it.path })
+        val canAct = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
+        items.add(SettingItem.CategoryHeader("checkSystemChanges", R.string.auto_start_check_system_changes))
+        items.add(SettingItem.SettingEntry(
+            stableId = "checkMakerWhitelist",
+            nameResId = R.string.auto_start_check_whitelist,
+            value = if (!canAct) getString(R.string.auto_start_check_whitelist_needs_root)
+                else getString(when (status) {
+                    MakerWhitelistPolicy.Status.NOT_APPLIED -> R.string.auto_start_check_whitelist_not_applied
+                    MakerWhitelistPolicy.Status.PARTLY_APPLIED -> R.string.auto_start_check_whitelist_partly
+                    MakerWhitelistPolicy.Status.APPLIED -> R.string.auto_start_check_whitelist_applied
+                }, format.name),
+            isEnabled = canAct,
+            onClick = {
+                if (status == MakerWhitelistPolicy.Status.APPLIED) confirmRemove(format) else confirmApply(format)
+            }
+        ))
+        items.add(SettingItem.InfoBanner("checkNotOffered", R.string.auto_start_check_not_offered))
+    }
+
+    private fun confirmApply(format: MakerWhitelistPolicy.Format) {
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.auto_start_check_whitelist)
+            .setMessage(getString(R.string.auto_start_check_whitelist_apply_message, format.files.size, format.name))
+            .setNeutralButton(R.string.oem_app_btn_commands) { _, _ -> showCommands(format) }
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.auto_start_check_whitelist_apply) { _, _ ->
+                runWhitelistChange { MakerWhitelist.apply(it, format) }
+            }
+            .show()
+    }
+
+    private fun confirmRemove(format: MakerWhitelistPolicy.Format) {
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.auto_start_check_whitelist)
+            .setMessage(getString(R.string.auto_start_check_whitelist_remove_message, format.name))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.auto_start_check_whitelist_remove) { _, _ ->
+                runWhitelistChange { MakerWhitelist.remove(it, format) }
+            }
+            .show()
+    }
+
+    private fun showCommands(format: MakerWhitelistPolicy.Format) {
+        MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+            .setTitle(R.string.oem_app_commands_title)
+            .setMessage(MakerWhitelist.describe(requireContext(), format))
+            .setPositiveButton(R.string.close) { _, _ -> confirmApply(format) }
+            .show()
+    }
+
+    private fun runWhitelistChange(change: suspend (Context) -> MakerWhitelist.Result) {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = change(appContext)
+            runCheck()
+            val message = when (result) {
+                MakerWhitelist.Result.DONE -> null
+                MakerWhitelist.Result.NO_ROUTE -> R.string.auto_start_check_whitelist_needs_root
+                MakerWhitelist.Result.VERITY -> R.string.auto_start_check_whitelist_failed_verity
+                MakerWhitelist.Result.READ_FAILED -> R.string.auto_start_check_whitelist_failed_read
+                MakerWhitelist.Result.REMOUNT_FAILED -> R.string.auto_start_check_whitelist_failed_remount
+                MakerWhitelist.Result.WRITE_FAILED -> R.string.auto_start_check_whitelist_failed_write
+            }
+            if (!isAdded) return@launch
+            if (message != null) {
+                MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                    .setTitle(R.string.auto_start_check_whitelist)
+                    .setMessage(message)
+                    .setPositiveButton(R.string.close, null)
+                    .show()
+                return@launch
+            }
+            // The firmware reads its lists when it starts, so the change counts from the next boot.
+            MaterialAlertDialogBuilder(requireContext(), R.style.DarkAlertDialog)
+                .setTitle(R.string.auto_start_check_whitelist)
+                .setMessage(R.string.auto_start_check_whitelist_done)
+                .setNegativeButton(R.string.auto_start_check_later, null)
+                .setPositiveButton(R.string.auto_start_check_restart_now) { _, _ ->
+                    lifecycleScope.launch { MakerWhitelist.reboot(appContext) }
+                }
+                .show()
         }
     }
 
