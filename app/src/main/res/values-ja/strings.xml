@@ -255,6 +255,13 @@
     <string name="auto_start_check_copy">レポートをコピー</string>
     <string name="auto_start_check_share">レポートを共有</string>
     <string name="auto_start_check_again">もう一度確認</string>
+    <string name="auto_start_check_fixes">システムファイルを変更しない対処</string>
+    <string name="auto_start_check_exemptions">バッテリーとバックグラウンドの除外</string>
+    <string name="auto_start_check_exemptions_description">アプリをバッテリーセーバーの対象外にし、バックグラウンドでの動作を許可します。オフにすると判断はシステムに戻ります。</string>
+    <string name="auto_start_check_duraspeed_off">起動のたびにDuraSpeedをオフにする</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek端末向け。DuraSpeedは再起動のたびにオンに戻るため、カーナビの起動ごとにアプリがオフにします。</string>
+    <string name="auto_start_check_needs_access">この端末ではrootまたはADBが必要です。</string>
+    <string name="auto_start_check_fix_failed">適用できませんでした。詳細はログにあります。</string>
     <string name="auto_start_screen_on_label">画面ON時に開始</string>
     <string name="auto_start_screen_on_description">画面がONになるたびにアプリを起動します。完全にシャットダウンしないヘッドユニットや、他の自動起動オプションが機能しない高速起動モードのヘッドユニットに最適です。スマートフォンやタブレットには推奨しません。</string>
     <string name="select_bt_device">Bluetoothデバイスの選択</string>

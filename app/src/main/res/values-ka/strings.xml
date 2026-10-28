@@ -249,6 +249,13 @@
     <string name="auto_start_check_copy">ანგარიშის კოპირება</string>
     <string name="auto_start_check_share">ანგარიშის გაზიარება</string>
     <string name="auto_start_check_again">ხელახლა შემოწმება</string>
+    <string name="auto_start_check_fixes">გასწორებები სისტემური ფაილების შეცვლის გარეშე</string>
+    <string name="auto_start_check_exemptions">ბატარეისა და ფონური მუშაობის გამონაკლისები</string>
+    <string name="auto_start_check_exemptions_description">აპს გამორიცხავს ბატარეის დაზოგვიდან და ფონურ რეჟიმში მუშაობის საშუალებას აძლევს. გამორთვისას გადაწყვეტილება ისევ სისტემას უბრუნდება.</string>
+    <string name="auto_start_check_duraspeed_off">DuraSpeed-ის გამორთვა ყოველ ჩატვირთვაზე</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek მოწყობილობები. DuraSpeed ყოველი გადატვირთვის შემდეგ ისევ ირთვება, ამიტომ აპი მას თიშავს ყოველ ჯერზე, როცა მაგნიტოლა ირთვება.</string>
+    <string name="auto_start_check_needs_access">ამ მოწყობილობაზე საჭიროა root ან ADB.</string>
+    <string name="auto_start_check_fix_failed">ვერ გამოიყენა. დეტალები ჟურნალშია.</string>
     <string name="auto_start_screen_on_label">გაშვება ეკრანის ჩართვისას</string>
     <string name="auto_start_screen_on_description">აპის გახსნა ეკრანის ყოველ ჩართვაზე. იდეალურია მაგნიტოლებისთვის, რომლებიც არასდროს ითიშება სრულად ან იყენებენ სწრაფი ჩატვირთვის რეჟიმებს, სადაც ავტომატური გაშვების სხვა ვარიანტები არ მუშაობს. ტელეფონებისა და ტაბლეტებისთვის რეკომენდებული არ არის.</string>
     <string name="select_bt_device">აირჩიეთ Bluetooth მოწყობილობა</string>

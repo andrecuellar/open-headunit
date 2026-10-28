@@ -454,6 +454,13 @@
     <string name="auto_start_check_copy">Copier le rapport</string>
     <string name="auto_start_check_share">Partager le rapport</string>
     <string name="auto_start_check_again">Vérifier à nouveau</string>
+    <string name="auto_start_check_fixes">Correctifs sans modifier les fichiers système</string>
+    <string name="auto_start_check_exemptions">Exemptions batterie et arrière-plan</string>
+    <string name="auto_start_check_exemptions_description">Sort l\'application de l\'économie de batterie et la laisse fonctionner en arrière-plan. Désactivé, le système décide à nouveau.</string>
+    <string name="auto_start_check_duraspeed_off">Désactiver DuraSpeed à chaque démarrage</string>
+    <string name="auto_start_check_duraspeed_off_description">Appareils MediaTek. DuraSpeed se réactive après chaque redémarrage, l\'application le désactive donc à chaque démarrage de l\'autoradio.</string>
+    <string name="auto_start_check_needs_access">Nécessite root ou ADB sur cet appareil.</string>
+    <string name="auto_start_check_fix_failed">Impossible de l\'appliquer. Le journal contient les détails.</string>
     <string name="auto_start_screen_on_label">Démarrer à l\'allumage de l\'écran</string>
     <string name="auto_start_screen_on_description">Ouvrir l\'application chaque fois que l\'écran s\'allume. Idéal pour les autoradios qui ne s\'éteignent jamais complètement ou qui utilisent des modes de démarrage rapide où les autres options de démarrage auto ne fonctionnent pas. Non recommandé pour les téléphones ou tablettes.</string>
     <string name="select_bt_device">Sélectionner l\'appareil Bluetooth</string>

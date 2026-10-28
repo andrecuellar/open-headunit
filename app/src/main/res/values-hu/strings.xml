@@ -229,6 +229,13 @@
     <string name="auto_start_check_copy">Jelentés másolása</string>
     <string name="auto_start_check_share">Jelentés megosztása</string>
     <string name="auto_start_check_again">Újraellenőrzés</string>
+    <string name="auto_start_check_fixes">Javítások a rendszerfájlok módosítása nélkül</string>
+    <string name="auto_start_check_exemptions">Akkumulátor- és háttérkivételek</string>
+    <string name="auto_start_check_exemptions_description">Kiveszi az alkalmazást az akkumulátorkímélésből, és engedi a háttérben futni. Kikapcsolva ismét a rendszer dönt.</string>
+    <string name="auto_start_check_duraspeed_off">DuraSpeed kikapcsolása minden indításkor</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek eszközök. A DuraSpeed minden újraindítás után visszakapcsol, ezért az alkalmazás a fejegység minden indításakor kikapcsolja.</string>
+    <string name="auto_start_check_needs_access">Rootot vagy ADB-t igényel ezen az eszközön.</string>
+    <string name="auto_start_check_fix_failed">Nem sikerült alkalmazni. A részletek a naplóban vannak.</string>
     <string name="auto_start_screen_on_label">Indítás képernyő bekapcsolásakor</string>
     <string name="auto_start_screen_on_description">Az alkalmazás megnyitása minden alkalommal, amikor a képernyő bekapcsol. Ideális olyan fejegységekhez, amelyek soha nem kapcsolnak ki teljesen, vagy gyorsindítási módot használnak, ahol a többi automatikus indítási lehetőség nem működik. Telefonokhoz és táblagépekhez nem ajánlott.</string>
     <string name="select_bt_device">Bluetooth-eszköz kiválasztása</string>

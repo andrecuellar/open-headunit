@@ -255,6 +255,13 @@
     <string name="auto_start_check_copy">Copia rapporto</string>
     <string name="auto_start_check_share">Condividi rapporto</string>
     <string name="auto_start_check_again">Controlla di nuovo</string>
+    <string name="auto_start_check_fixes">Correzioni senza modificare i file di sistema</string>
+    <string name="auto_start_check_exemptions">Esenzioni batteria e background</string>
+    <string name="auto_start_check_exemptions_description">Toglie l\'app dal risparmio batteria e la lascia funzionare in background. Disattivandolo, decide di nuovo il sistema.</string>
+    <string name="auto_start_check_duraspeed_off">Disattiva DuraSpeed a ogni avvio</string>
+    <string name="auto_start_check_duraspeed_off_description">Dispositivi MediaTek. DuraSpeed si riattiva dopo ogni riavvio, quindi l\'app lo disattiva a ogni accensione dell\'autoradio.</string>
+    <string name="auto_start_check_needs_access">Richiede root o ADB su questo dispositivo.</string>
+    <string name="auto_start_check_fix_failed">Impossibile applicarlo. I dettagli sono nel log.</string>
     <string name="auto_start_screen_on_label">Avvia all\'accensione dello schermo</string>
     <string name="auto_start_screen_on_description">Apri l\'app ogni volta che lo schermo si accende. Ideale per head unit che non si spengono mai completamente o che usano modalità di avvio rapido, dove le altre opzioni di avvio automatico non funzionano. Non consigliato per telefoni o tablet.</string>
     <string name="select_bt_device">Seleziona dispositivo Bluetooth</string>

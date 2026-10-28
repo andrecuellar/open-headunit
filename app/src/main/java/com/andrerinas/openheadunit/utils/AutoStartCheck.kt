@@ -9,6 +9,7 @@ import android.os.PowerManager
 import androidx.annotation.RequiresApi
 import com.andrerinas.openheadunit.BuildConfig
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy
+import com.andrerinas.openheadunit.app.AutoStartFixPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -101,6 +102,9 @@ object AutoStartCheck {
     }
 
     private suspend fun duraSpeedInstalled(context: Context, privileged: Boolean, read: suspend (String) -> String): Boolean? {
+        // The build properties are readable by any app and name it even when the package is hidden.
+        val props = AutoStartFixPolicy.DURASPEED_PROPS.map { read("getprop $it") }
+        if (AutoStartFixPolicy.duraSpeedSupported(props)) return true
         try {
             context.packageManager.getPackageInfo(DURASPEED_PACKAGE, 0)
             return true

@@ -231,6 +231,13 @@
     <string name="auto_start_check_copy">Copiar informe</string>
     <string name="auto_start_check_share">Compartir informe</string>
     <string name="auto_start_check_again">Revisar de nuevo</string>
+    <string name="auto_start_check_fixes">Arreglos que no cambian archivos del sistema</string>
+    <string name="auto_start_check_exemptions">Exenciones de batería y segundo plano</string>
+    <string name="auto_start_check_exemptions_description">Saca la aplicación del ahorro de batería y la deja funcionar en segundo plano. Al desactivarlo, la decisión vuelve al sistema.</string>
+    <string name="auto_start_check_duraspeed_off">Desactivar DuraSpeed en cada arranque</string>
+    <string name="auto_start_check_duraspeed_off_description">Radios MediaTek. DuraSpeed se vuelve a activar tras cada reinicio, así que la aplicación lo desactiva cada vez que arranca la radio.</string>
+    <string name="auto_start_check_needs_access">Necesita root o ADB en esta radio.</string>
+    <string name="auto_start_check_fix_failed">No se ha podido aplicar. El registro tiene los detalles.</string>
     <string name="auto_start_screen_on_label">Iniciar al encender la pantalla</string>
     <string name="auto_start_screen_on_description">Abre la app cada vez que se enciende la pantalla. Ideal para unidades que nunca se apagan por completo o que usan modos de arranque rápido en los que las demás opciones de inicio automático no funcionan. No se recomienda en móviles ni tablets.</string>
     <string name="select_bt_device">Seleccionar dispositivo Bluetooth</string>

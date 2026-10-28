@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,13 +15,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.andrerinas.openheadunit.App
 import com.andrerinas.openheadunit.R
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy
 import com.andrerinas.openheadunit.app.AutoStartCheckPolicy.Verdict
+import com.andrerinas.openheadunit.app.AutoStartFixPolicy
 import com.andrerinas.openheadunit.main.settings.SettingItem
 import com.andrerinas.openheadunit.main.settings.SettingsAdapter
 import com.andrerinas.openheadunit.utils.AppLog
 import com.andrerinas.openheadunit.utils.AutoStartCheck
+import com.andrerinas.openheadunit.utils.AutoStartFixes
 import com.andrerinas.openheadunit.utils.OemAppManager
 import com.andrerinas.openheadunit.utils.ToastUtils
 import com.google.android.material.appbar.MaterialToolbar
@@ -119,11 +123,63 @@ class AutoStartCheckFragment : Fragment() {
             onClick = { showLists(f) }
         ))
 
+        addFixes(items, f)
+
         items.add(SettingItem.ActionButton("checkCopy", R.string.auto_start_check_copy) { copyReport(f) })
         items.add(SettingItem.ActionButton("checkShare", R.string.auto_start_check_share) { shareReport(f) })
         items.add(SettingItem.ActionButton("checkAgain", R.string.auto_start_check_again) { runCheck() })
 
         adapter.submitList(items)
+    }
+
+    /** Phase two of #1122: switches that need root or ADB and leave /system alone. */
+    private fun addFixes(items: MutableList<SettingItem>, f: AutoStartCheckPolicy.Findings) {
+        val showExemptions = AutoStartFixPolicy.exemptionsApply(Build.VERSION.SDK_INT)
+        val settings = App.provide(requireContext()).settings
+        // Shown while on even if DuraSpeed is no longer detected, so it can always be turned off.
+        val showDuraSpeed = f.duraSpeed == true || settings.duraSpeedOffOnBoot
+        if (!showExemptions && !showDuraSpeed) return
+
+        val canAct = f.route != OemAppManager.ExecutionBackend.NONE.name.lowercase()
+        items.add(SettingItem.CategoryHeader("checkFixes", R.string.auto_start_check_fixes))
+        if (showExemptions) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "checkExemptions",
+                nameResId = R.string.auto_start_check_exemptions,
+                descriptionResId = if (canAct) R.string.auto_start_check_exemptions_description
+                    else R.string.auto_start_check_needs_access,
+                isChecked = f.batteryExempt == true && f.backgroundRestricted != true,
+                isEnabled = canAct,
+                onCheckedChanged = { grant -> runFix { AutoStartFixes.setExemptions(it, grant) } }
+            ))
+        }
+        if (showDuraSpeed) {
+            items.add(SettingItem.ToggleSettingEntry(
+                stableId = "checkDuraSpeedOff",
+                nameResId = R.string.auto_start_check_duraspeed_off,
+                descriptionResId = if (canAct || settings.duraSpeedOffOnBoot) R.string.auto_start_check_duraspeed_off_description
+                    else R.string.auto_start_check_needs_access,
+                isChecked = settings.duraSpeedOffOnBoot,
+                isEnabled = canAct || settings.duraSpeedOffOnBoot,
+                onCheckedChanged = { on ->
+                    settings.duraSpeedOffOnBoot = on
+                    AppLog.i("AutoStartCheckFragment: DuraSpeed off on boot set to $on")
+                    // Turning it off only stops doing it; DuraSpeed itself returns on the next restart.
+                    if (on) runFix { AutoStartFixes.turnDuraSpeedOff(it, "settings") }
+                }
+            ))
+        }
+    }
+
+    /** Runs [fix], says so if it failed, and checks again so every switch shows the real state. */
+    private fun runFix(fix: suspend (Context) -> Boolean) {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (!fix(appContext)) {
+                ToastUtils.showToast(context, getString(R.string.auto_start_check_fix_failed), Toast.LENGTH_LONG, force = true)
+            }
+            runCheck()
+        }
     }
 
     private fun row(id: String, nameResId: Int, value: String) =

@@ -238,6 +238,13 @@
     <string name="auto_start_check_copy">Sao chép báo cáo</string>
     <string name="auto_start_check_share">Chia sẻ báo cáo</string>
     <string name="auto_start_check_again">Kiểm tra lại</string>
+    <string name="auto_start_check_fixes">Sửa lỗi không thay đổi tệp hệ thống</string>
+    <string name="auto_start_check_exemptions">Miễn trừ pin và chạy nền</string>
+    <string name="auto_start_check_exemptions_description">Đưa ứng dụng ra khỏi chế độ tiết kiệm pin và cho phép chạy nền. Khi tắt, quyết định trở lại với hệ thống.</string>
+    <string name="auto_start_check_duraspeed_off">Tắt DuraSpeed mỗi lần khởi động</string>
+    <string name="auto_start_check_duraspeed_off_description">Đầu xe MediaTek. DuraSpeed tự bật lại sau mỗi lần khởi động lại, nên ứng dụng tắt nó mỗi khi đầu xe khởi động.</string>
+    <string name="auto_start_check_needs_access">Cần root hoặc ADB trên thiết bị này.</string>
+    <string name="auto_start_check_fix_failed">Không thể áp dụng. Chi tiết có trong nhật ký.</string>
     <string name="auto_start_screen_on_label">Khởi động khi bật màn hình</string>
     <string name="auto_start_screen_on_description">Mở ứng dụng mỗi lần màn hình bật. Phù hợp với headunit không bao giờ tắt hẳn hoặc dùng khởi động nhanh khi các tuỳ chọn tự khởi động khác không hoạt động. Không khuyến nghị cho điện thoại hay máy tính bảng.</string>
     <string name="select_bt_device">Chọn thiết bị Bluetooth</string>

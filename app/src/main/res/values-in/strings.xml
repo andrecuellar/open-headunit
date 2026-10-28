@@ -492,6 +492,13 @@
     <string name="auto_start_check_copy">Salin laporan</string>
     <string name="auto_start_check_share">Bagikan laporan</string>
     <string name="auto_start_check_again">Periksa lagi</string>
+    <string name="auto_start_check_fixes">Perbaikan tanpa mengubah file sistem</string>
+    <string name="auto_start_check_exemptions">Pengecualian baterai dan latar belakang</string>
+    <string name="auto_start_check_exemptions_description">Mengeluarkan aplikasi dari penghemat baterai dan membiarkannya berjalan di latar belakang. Jika dimatikan, keputusan kembali ke sistem.</string>
+    <string name="auto_start_check_duraspeed_off">Matikan DuraSpeed setiap boot</string>
+    <string name="auto_start_check_duraspeed_off_description">Unit MediaTek. DuraSpeed menyala lagi setelah setiap restart, jadi aplikasi mematikannya setiap kali head unit menyala.</string>
+    <string name="auto_start_check_needs_access">Perlu root atau ADB di unit ini.</string>
+    <string name="auto_start_check_fix_failed">Tidak dapat diterapkan. Detailnya ada di log.</string>
     <string name="auto_start_screen_on_label">Mulai saat layar menyala</string>
     <string name="auto_start_screen_on_description">Buka aplikasi setiap kali layar menyala. Ideal untuk head unit yang tidak pernah mati sepenuhnya atau menggunakan mode boot cepat di mana opsi mulai otomatis lainnya tidak berfungsi. Tidak disarankan untuk ponsel atau tablet.</string>
     <string name="select_bt_device">Pilih Perangkat Bluetooth</string>

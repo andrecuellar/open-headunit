@@ -230,6 +230,13 @@
     <string name="auto_start_check_copy">Kopírovat zprávu</string>
     <string name="auto_start_check_share">Sdílet zprávu</string>
     <string name="auto_start_check_again">Zkontrolovat znovu</string>
+    <string name="auto_start_check_fixes">Opravy bez změny systémových souborů</string>
+    <string name="auto_start_check_exemptions">Výjimky pro baterii a běh na pozadí</string>
+    <string name="auto_start_check_exemptions_description">Vyjme aplikaci z úspory baterie a nechá ji běžet na pozadí. Po vypnutí rozhoduje opět systém.</string>
+    <string name="auto_start_check_duraspeed_off">Vypínat DuraSpeed při každém startu</string>
+    <string name="auto_start_check_duraspeed_off_description">Zařízení MediaTek. DuraSpeed se po každém restartu znovu zapne, proto ho aplikace vypne při každém startu autorádia.</string>
+    <string name="auto_start_check_needs_access">Vyžaduje root nebo ADB na tomto zařízení.</string>
+    <string name="auto_start_check_fix_failed">Nepodařilo se použít. Podrobnosti jsou v logu.</string>
     <string name="auto_start_screen_on_label">Spustit při zapnutí obrazovky</string>
     <string name="auto_start_screen_on_description">Otevřít aplikaci pokaždé, když se zapne obrazovka. Ideální pro autorádia, která se nikdy úplně nevypnou nebo používají rychlé spuštění, kde ostatní možnosti automatického spuštění nefungují. Nedoporučuje se pro telefony ani tablety.</string>
     <string name="select_bt_device">Vybrat zařízení Bluetooth</string>

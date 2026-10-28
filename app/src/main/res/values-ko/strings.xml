@@ -260,6 +260,13 @@
     <string name="auto_start_check_copy">보고서 복사</string>
     <string name="auto_start_check_share">보고서 공유</string>
     <string name="auto_start_check_again">다시 점검</string>
+    <string name="auto_start_check_fixes">시스템 파일을 바꾸지 않는 해결책</string>
+    <string name="auto_start_check_exemptions">배터리 및 백그라운드 예외</string>
+    <string name="auto_start_check_exemptions_description">앱을 배터리 절약 대상에서 빼고 백그라운드에서 실행되게 합니다. 끄면 결정이 다시 시스템으로 돌아갑니다.</string>
+    <string name="auto_start_check_duraspeed_off">부팅할 때마다 DuraSpeed 끄기</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek 기기. DuraSpeed는 재시작할 때마다 다시 켜지므로 헤드 유닛이 시작될 때마다 앱이 끕니다.</string>
+    <string name="auto_start_check_needs_access">이 기기에서 root 또는 ADB가 필요합니다.</string>
+    <string name="auto_start_check_fix_failed">적용하지 못했습니다. 자세한 내용은 로그에 있습니다.</string>
     <string name="auto_start_screen_on_label">화면 켜짐 시 자동 시작</string>
     <string name="auto_start_screen_on_description">화면이 켜질 때마다 앱을 실행합니다. 완전히 종료되지 않거나 빠른 부팅 모드를 사용해 다른 자동 시작 옵션이 작동하지 않는 헤드유닛에 적합합니다. 휴대전화나 태블릿에서는 권장하지 않습니다.</string>
     <string name="select_bt_device">블루투스 기기 선택</string>

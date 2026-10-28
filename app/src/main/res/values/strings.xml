@@ -518,6 +518,13 @@
     <string name="auto_start_check_copy">Copy report</string>
     <string name="auto_start_check_share">Share report</string>
     <string name="auto_start_check_again">Check again</string>
+    <string name="auto_start_check_fixes">Fixes that do not change system files</string>
+    <string name="auto_start_check_exemptions">Battery and background exemptions</string>
+    <string name="auto_start_check_exemptions_description">Keeps the app out of battery saving and lets it run in the background. Turning it off gives the choice back to the system.</string>
+    <string name="auto_start_check_duraspeed_off">Turn DuraSpeed off on every boot</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek units. DuraSpeed turns itself back on after every restart, so the app turns it off each time the unit starts.</string>
+    <string name="auto_start_check_needs_access">Needs root or ADB on this unit.</string>
+    <string name="auto_start_check_fix_failed">Could not apply it. The log has the details.</string>
     <string name="auto_start_screen_on_label">Start on screen on</string>
     <string name="auto_start_screen_on_description">Open the app every time the screen turns on. Ideal for head units that never fully shut down or use fast boot modes where the other auto-start options don\'t work. Not recommended for phones or tablets.</string>
     <string name="select_bt_device">Select Bluetooth Device</string>

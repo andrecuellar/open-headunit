@@ -229,6 +229,13 @@
     <string name="auto_start_check_copy">Rapport kopiëren</string>
     <string name="auto_start_check_share">Rapport delen</string>
     <string name="auto_start_check_again">Opnieuw controleren</string>
+    <string name="auto_start_check_fixes">Oplossingen die geen systeembestanden wijzigen</string>
+    <string name="auto_start_check_exemptions">Uitzonderingen voor batterij en achtergrond</string>
+    <string name="auto_start_check_exemptions_description">Haalt de app uit batterijbesparing en laat hem op de achtergrond draaien. Uitgeschakeld beslist het systeem weer.</string>
+    <string name="auto_start_check_duraspeed_off">DuraSpeed bij elke start uitschakelen</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek-apparaten. DuraSpeed gaat na elke herstart weer aan, dus de app schakelt het uit telkens als de autoradio start.</string>
+    <string name="auto_start_check_needs_access">Vereist root of ADB op dit apparaat.</string>
+    <string name="auto_start_check_fix_failed">Kon niet worden toegepast. Het logboek bevat de details.</string>
     <string name="auto_start_screen_on_label">Starten bij scherm aan</string>
     <string name="auto_start_screen_on_description">Open de app telkens wanneer het scherm aangaat. Handig voor headunits die nooit volledig uitschakelen of een snelle opstartmodus gebruiken, waardoor de andere opties voor automatisch starten niet werken. Niet aanbevolen voor telefoons of tablets.</string>
     <string name="select_bt_device">Selecteer Bluetooth-apparaat</string>

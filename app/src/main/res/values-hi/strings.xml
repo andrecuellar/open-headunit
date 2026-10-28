@@ -492,6 +492,13 @@
     <string name="auto_start_check_copy">रिपोर्ट कॉपी करें</string>
     <string name="auto_start_check_share">रिपोर्ट शेयर करें</string>
     <string name="auto_start_check_again">फिर से जाँचें</string>
+    <string name="auto_start_check_fixes">सिस्टम फ़ाइलें बदले बिना सुधार</string>
+    <string name="auto_start_check_exemptions">बैटरी और बैकग्राउंड छूट</string>
+    <string name="auto_start_check_exemptions_description">ऐप को बैटरी सेविंग से बाहर रखता है और बैकग्राउंड में चलने देता है। बंद करने पर फ़ैसला फिर सिस्टम का होगा।</string>
+    <string name="auto_start_check_duraspeed_off">हर बूट पर DuraSpeed बंद करें</string>
+    <string name="auto_start_check_duraspeed_off_description">MediaTek यूनिट। DuraSpeed हर रीस्टार्ट के बाद फिर चालू हो जाता है, इसलिए यूनिट शुरू होने पर ऐप उसे हर बार बंद करता है।</string>
+    <string name="auto_start_check_needs_access">इस यूनिट में root या ADB चाहिए।</string>
+    <string name="auto_start_check_fix_failed">लागू नहीं हो सका। विवरण लॉग में है।</string>
     <string name="auto_start_screen_on_label">स्क्रीन ऑन होने पर शुरू करें</string>
     <string name="auto_start_screen_on_description">स्क्रीन चालू होने पर हर बार ऐप खोलें। यह उन हेड यूनिट के लिए सही है जो कभी पूरी तरह बंद नहीं होते या फ़ास्ट बूट मोड इस्तेमाल करते हैं, जहाँ ऑटो-स्टार्ट के दूसरे विकल्प काम नहीं करते। फ़ोन या टैबलेट के लिए सुझाया नहीं जाता।</string>
     <string name="select_bt_device">ब्लूटूथ डिवाइस चुनें</string>

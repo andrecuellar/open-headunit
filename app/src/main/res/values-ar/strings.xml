@@ -230,6 +230,13 @@
     <string name="auto_start_check_copy">نسخ التقرير</string>
     <string name="auto_start_check_share">مشاركة التقرير</string>
     <string name="auto_start_check_again">افحص مجددًا</string>
+    <string name="auto_start_check_fixes">إصلاحات لا تغيّر ملفات النظام</string>
+    <string name="auto_start_check_exemptions">استثناءات البطارية والخلفية</string>
+    <string name="auto_start_check_exemptions_description">يُخرج التطبيق من توفير البطارية ويتركه يعمل في الخلفية. عند إيقافه يعود القرار إلى النظام.</string>
+    <string name="auto_start_check_duraspeed_off">إيقاف DuraSpeed عند كل إقلاع</string>
+    <string name="auto_start_check_duraspeed_off_description">شاشات MediaTek. يعود DuraSpeed للعمل بعد كل إعادة تشغيل، لذلك يوقفه التطبيق في كل مرة تبدأ فيها الشاشة.</string>
+    <string name="auto_start_check_needs_access">يتطلب روت أو ADB على هذا الجهاز.</string>
+    <string name="auto_start_check_fix_failed">تعذّر التطبيق. التفاصيل في السجل.</string>
     <string name="auto_start_screen_on_label">التشغيل عند تشغيل الشاشة</string>
     <string name="auto_start_screen_on_description">فتح التطبيق في كل مرة تُشغَّل فيها الشاشة. مثالي لوحدات السيارة التي لا تنطفئ تمامًا أو تستخدم أوضاع التشغيل السريع حيث لا تعمل خيارات التشغيل التلقائي الأخرى. غير موصى به للهواتف أو الأجهزة اللوحية.</string>
     <string name="select_bt_device">اختر جهاز البلوتوث</string>
